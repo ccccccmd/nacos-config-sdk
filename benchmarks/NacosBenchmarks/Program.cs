@@ -13,8 +13,8 @@ internal class Program
 {
     private static void Main(string[] args)
     {
-        //var summary = BenchmarkRunner.Run<ConfigOperationBenchmarks>();
-        var summary = BenchmarkRunner.Run<ConnectionPoolingBenchmarks>();
+        var summary = BenchmarkRunner.Run<ConfigOperationBenchmarks>();
+        //var summary = BenchmarkRunner.Run<ConnectionPoolingBenchmarks>();
     }
 }
 

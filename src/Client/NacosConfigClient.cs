@@ -308,8 +308,14 @@ public class NacosConfigClient : INacosConfigClient
         {
             var queryString = BuildQueryString(queryParameters);
             path = $"{path}?{queryString}";
-            _logger.LogDebug("Listener endpoint with auth query: {Path}",
-                path.Replace(queryParameters.GetValueOrDefault(NacosConstants.AccessTokenHeader, ""), "***"));
+            
+            // Mask access token in logs if present (for username/password auth)
+            var logPath = path;
+            if (queryParameters.TryGetValue(NacosConstants.AccessTokenHeader, out var token) && !string.IsNullOrEmpty(token))
+            {
+                logPath = path.Replace(token, "***");
+            }
+            _logger.LogDebug("Listener endpoint with auth query: {Path}", logPath);
         }
 
         using var request = new HttpRequestMessage(HttpMethod.Post, path);

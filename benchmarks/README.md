@@ -55,13 +55,13 @@ options.Password = "your-password";
 
 ## Expected Results
 
-Typical results on local network:
+Typical results on aliyun(1c2g v2.3.2.0) public network:
 
-| Operation | Mean Time | Allocated Memory |
-|-----------|-----------|------------------|
-| GetConfig | ~50-100ms | ~2-5 KB |
-| PublishConfig | ~100-200ms | ~5-10 KB |
-| 100 Concurrent | ~500ms | ~200 KB |
+| Method             | requestCount | Mean     | Error    | StdDev    | Gen0     | Allocated  |
+|------------------- |------------- |---------:|---------:|----------:|---------:|-----------:|
+| ConcurrentRequests | 10           | 31.09 ms | 11.07 ms |  2.874 ms |        - |  112.79 KB |
+| ConcurrentRequests | 50           | 47.30 ms | 14.43 ms |  2.233 ms |        - |  543.37 KB |
+| ConcurrentRequests | 100          | 77.03 ms | 92.34 ms | 14.290 ms | 111.1111 | 1086.37 KB |
 
 *Results may vary based on network latency and Nacos server performance*
 
