@@ -1,17 +1,17 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Nacos.V2.Config.Models;
+using Nacos.Config.Models;
 
-namespace Nacos.V2.Config.Storage;
+namespace Nacos.Config.Storage;
 
 /// <summary>
-/// File-based local configuration storage
+///     File-based local configuration storage
 /// </summary>
 public class FileLocalConfigStorage : ILocalConfigStorage
 {
-    private readonly NacosConfigOptions _options;
-    private readonly ILogger<FileLocalConfigStorage> _logger;
     private readonly Lazy<string> _baseDirectory;
+    private readonly ILogger<FileLocalConfigStorage> _logger;
+    private readonly NacosConfigOptions _options;
 
     public FileLocalConfigStorage(
         IOptions<NacosConfigOptions> options,
@@ -23,7 +23,8 @@ public class FileLocalConfigStorage : ILocalConfigStorage
         _baseDirectory = new Lazy<string>(() =>
         {
             var baseDir = string.IsNullOrWhiteSpace(_options.SnapshotPath)
-                ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "nacos", "config")
+                ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "nacos",
+                    "config")
                 : _options.SnapshotPath;
 
             if (!Directory.Exists(baseDir))
@@ -36,7 +37,8 @@ public class FileLocalConfigStorage : ILocalConfigStorage
         });
     }
 
-    public async Task<LocalConfigData?> GetFailoverConfigAsync(ConfigKey key, CancellationToken cancellationToken = default)
+    public async Task<LocalConfigData?> GetFailoverConfigAsync(ConfigKey key,
+        CancellationToken cancellationToken = default)
     {
         if (!_options.EnableSnapshot)
         {
@@ -66,7 +68,8 @@ public class FileLocalConfigStorage : ILocalConfigStorage
         }
     }
 
-    public async Task<LocalConfigData?> GetSnapshotConfigAsync(ConfigKey key, CancellationToken cancellationToken = default)
+    public async Task<LocalConfigData?> GetSnapshotConfigAsync(ConfigKey key,
+        CancellationToken cancellationToken = default)
     {
         if (!_options.EnableSnapshot)
         {

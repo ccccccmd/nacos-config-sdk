@@ -1,7 +1,7 @@
-namespace Nacos.V2.Config.Models;
+namespace Nacos.Config.Models;
 
 /// <summary>
-/// Configuration key that uniquely identifies a configuration item
+///     Configuration key that uniquely identifies a configuration item
 /// </summary>
 public readonly struct ConfigKey : IEquatable<ConfigKey>
 {
@@ -23,22 +23,22 @@ public readonly struct ConfigKey : IEquatable<ConfigKey>
     }
 
     /// <summary>
-    /// Configuration data ID
+    ///     Configuration data ID
     /// </summary>
     public string DataId { get; }
 
     /// <summary>
-    /// Configuration group
+    ///     Configuration group
     /// </summary>
     public string Group { get; }
 
     /// <summary>
-    /// Tenant (namespace)
+    ///     Tenant (namespace)
     /// </summary>
     public string Tenant { get; }
 
     /// <summary>
-    /// Get a unique string representation of this key
+    ///     Get a unique string representation of this key
     /// </summary>
     public string GetKeyString()
     {
@@ -63,7 +63,7 @@ public readonly struct ConfigKey : IEquatable<ConfigKey>
     {
         unchecked
         {
-            int hash = 17;
+            var hash = 17;
             hash = hash * 31 + (DataId?.GetHashCode() ?? 0);
             hash = hash * 31 + (Group?.GetHashCode() ?? 0);
             hash = hash * 31 + (Tenant?.GetHashCode() ?? 0);
@@ -71,8 +71,18 @@ public readonly struct ConfigKey : IEquatable<ConfigKey>
         }
     }
 
-    public override string ToString() => GetKeyString();
+    public override string ToString()
+    {
+        return GetKeyString();
+    }
 
-    public static bool operator ==(ConfigKey left, ConfigKey right) => left.Equals(right);
-    public static bool operator !=(ConfigKey left, ConfigKey right) => !left.Equals(right);
+    public static bool operator ==(ConfigKey left, ConfigKey right)
+    {
+        return left.Equals(right);
+    }
+
+    public static bool operator !=(ConfigKey left, ConfigKey right)
+    {
+        return !left.Equals(right);
+    }
 }

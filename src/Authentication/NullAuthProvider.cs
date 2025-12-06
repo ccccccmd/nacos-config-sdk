@@ -1,7 +1,7 @@
-namespace Nacos.V2.Config.Authentication;
+namespace Nacos.Config.Authentication;
 
 /// <summary>
-/// Null authentication provider (no authentication)
+///     Null authentication provider (no authentication)
 /// </summary>
 public class NullAuthProvider : IAuthenticationProvider
 {

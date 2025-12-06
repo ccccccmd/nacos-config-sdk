@@ -1,15 +1,15 @@
-using Nacos.V2.Config.Models;
+using Nacos.Config.Models;
 
-namespace Nacos.V2.Config.Core;
+namespace Nacos.Config.Core;
 
 /// <summary>
-/// Nacos configuration service interface
+///     Nacos configuration service interface
 /// </summary>
 public interface INacosConfigService
 {
     /// <summary>
-    /// Get configuration
-    /// Priority: Failover -> Server -> Snapshot
+    ///     Get configuration
+    ///     Priority: Failover -> Server -> Snapshot
     /// </summary>
     Task<string?> GetConfigAsync(
         string dataId,
@@ -17,7 +17,7 @@ public interface INacosConfigService
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Publish configuration to server
+    ///     Publish configuration to server
     /// </summary>
     Task<bool> PublishConfigAsync(
         string dataId,
@@ -27,7 +27,7 @@ public interface INacosConfigService
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Remove configuration from server
+    ///     Remove configuration from server
     /// </summary>
     Task<bool> RemoveConfigAsync(
         string dataId,
@@ -35,8 +35,8 @@ public interface INacosConfigService
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Subscribe to configuration changes
-    /// Returns IDisposable to unsubscribe
+    ///     Subscribe to configuration changes
+    ///     Returns IDisposable to unsubscribe
     /// </summary>
     IDisposable Subscribe(
         string dataId,

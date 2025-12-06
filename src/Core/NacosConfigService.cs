@@ -1,27 +1,27 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Nacos.V2.Config.Authentication;
-using Nacos.V2.Config.Client;
-using Nacos.V2.Config.Listening;
-using Nacos.V2.Config.Models;
-using Nacos.V2.Config.Storage;
-using Nacos.V2.Config.Utils;
+using Nacos.Config.Authentication;
+using Nacos.Config.Client;
+using Nacos.Config.Listening;
+using Nacos.Config.Models;
+using Nacos.Config.Storage;
+using Nacos.Config.Utils;
 
-namespace Nacos.V2.Config.Core;
+namespace Nacos.Config.Core;
 
 /// <summary>
-/// Nacos configuration service implementation
+///     Nacos configuration service implementation
 /// </summary>
 public class NacosConfigService : INacosConfigService, IDisposable
 {
-    private readonly INacosConfigClient _client;
-    private readonly ILocalConfigStorage _localStorage;
     private readonly IAuthenticationProvider _authProvider;
+    private readonly INacosConfigClient _client;
     private readonly IConfigListeningManager _listeningManager;
-    private readonly NacosConfigOptions _options;
+    private readonly ILocalConfigStorage _localStorage;
     private readonly ILogger<NacosConfigService> _logger;
-    private bool _started;
+    private readonly NacosConfigOptions _options;
     private readonly SemaphoreSlim _startLock = new(1, 1);
+    private bool _started;
 
     public NacosConfigService(
         INacosConfigClient client,
@@ -37,6 +37,12 @@ public class NacosConfigService : INacosConfigService, IDisposable
         _listeningManager = listeningManager;
         _options = options.Value;
         _logger = logger;
+    }
+
+    public void Dispose()
+    {
+        _listeningManager.Dispose();
+        _startLock.Dispose();
     }
 
     public async Task<string?> GetConfigAsync(
@@ -91,7 +97,8 @@ public class NacosConfigService : INacosConfigService, IDisposable
             _logger.LogError(ex, "Failed to get config {DataId}/{Group} from server, trying snapshot", dataId, group);
 
             // Priority 3: Fallback to snapshot
-            var snapshotConfig = await _localStorage.GetSnapshotConfigAsync(key, cancellationToken).ConfigureAwait(false);
+            var snapshotConfig =
+                await _localStorage.GetSnapshotConfigAsync(key, cancellationToken).ConfigureAwait(false);
             if (snapshotConfig != null && !snapshotConfig.IsEmpty)
             {
                 _logger.LogWarning("Using snapshot config for {DataId}/{Group}", dataId, group);
@@ -208,12 +215,6 @@ public class NacosConfigService : INacosConfigService, IDisposable
         {
             _startLock.Release();
         }
-    }
-
-    public void Dispose()
-    {
-        _listeningManager.Dispose();
-        _startLock.Dispose();
     }
 
     private class DisposableAction : IDisposable

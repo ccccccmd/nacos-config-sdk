@@ -1,29 +1,28 @@
-using Xunit;
+using System.Threading.Channels;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Nacos.V2.Config.Core;
-using Nacos.V2.Config.Extensions;
-using Nacos.V2.Config.Models;
+using Nacos.Config.Core;
+using Nacos.Config.Extensions;
 
 namespace NacosConfigTests;
 
 /// <summary>
-/// Integration tests for configuration listening functionality
-/// Requires running Nacos server
+///     Integration tests for configuration listening functionality
+///     Requires running Nacos server
 /// </summary>
 public class ConfigListenerTests : IAsyncLifetime
 {
-    private ServiceProvider _serviceProvider = null!;
     private INacosConfigService _configService = null!;
     private ILogger<ConfigListenerTests> _logger = null!;
+    private ServiceProvider _serviceProvider = null!;
 
     public async Task InitializeAsync()
     {
         // Load configuration from appsettings.Test.json
         var configuration = new ConfigurationBuilder()
             .SetBasePath(Directory.GetCurrentDirectory())
-            .AddJsonFile("appsettings.Test.json", optional: false)
+            .AddJsonFile("appsettings.Test.json", false)
             .Build();
 
         var services = new ServiceCollection();
@@ -35,10 +34,7 @@ public class ConfigListenerTests : IAsyncLifetime
         });
 
         // Add Nacos configuration service from config file
-        services.AddNacosConfigService(options =>
-        {
-            configuration.GetSection("Nacos").Bind(options);
-        });
+        services.AddNacosConfigService(options => { configuration.GetSection("Nacos").Bind(options); });
 
         _serviceProvider = services.BuildServiceProvider();
         _configService = _serviceProvider.GetRequiredService<INacosConfigService>();
@@ -55,7 +51,7 @@ public class ConfigListenerTests : IAsyncLifetime
             {
                 await _serviceProvider.DisposeAsync();
             }
-            catch (System.Threading.Channels.ChannelClosedException)
+            catch (ChannelClosedException)
             {
                 // Expected during test cleanup when ConfigListeningManager disposes
                 // Channel may already be closed, which is fine
@@ -74,7 +70,7 @@ public class ConfigListenerTests : IAsyncLifetime
 
         var changeReceived = new TaskCompletionSource<bool>();
         var receivedConfig = "";
-        int changeCount = 0;
+        var changeCount = 0;
 
         try
         {
@@ -209,7 +205,7 @@ public class ConfigListenerTests : IAsyncLifetime
             await Task.Delay(5000);
 
             // Assert
-          Assert.True(countAfterFirst >= 1, "Should receive first change");
+            Assert.True(countAfterFirst >= 1, "Should receive first change");
             Assert.Equal(countAfterFirst, receivedCount); // Count should not increase
         }
         finally

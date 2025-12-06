@@ -1,7 +1,7 @@
-namespace Nacos.V2.Config.Models;
+namespace Nacos.Config.Models;
 
 /// <summary>
-/// Event raised when configuration changes
+///     Event raised when configuration changes
 /// </summary>
 public class ConfigChangedEvent
 {
@@ -15,27 +15,27 @@ public class ConfigChangedEvent
     }
 
     /// <summary>
-    /// Configuration key
+    ///     Configuration key
     /// </summary>
     public ConfigKey Key { get; }
 
     /// <summary>
-    /// New configuration content
+    ///     New configuration content
     /// </summary>
     public string NewContent { get; }
 
     /// <summary>
-    /// Old configuration content
+    ///     Old configuration content
     /// </summary>
     public string OldContent { get; }
 
     /// <summary>
-    /// Content type
+    ///     Content type
     /// </summary>
     public string ContentType { get; }
 
     /// <summary>
-    /// Timestamp when the change was detected
+    ///     Timestamp when the change was detected
     /// </summary>
     public DateTimeOffset Timestamp { get; }
 }

@@ -1,15 +1,15 @@
 using System.Security.Cryptography;
 using System.Text;
 
-namespace Nacos.V2.Config.Utils;
+namespace Nacos.Config.Utils;
 
 /// <summary>
-/// Hash utility methods for MD5 and HMAC-SHA1
+///     Hash utility methods for MD5 and HMAC-SHA1
 /// </summary>
 public static class HashUtils
 {
     /// <summary>
-    /// Compute MD5 hash of a string
+    ///     Compute MD5 hash of a string
     /// </summary>
     public static string GetMd5(string input)
     {
@@ -29,7 +29,7 @@ public static class HashUtils
     }
 
     /// <summary>
-    /// Compute HMAC-SHA1 signature
+    ///     Compute HMAC-SHA1 signature
     /// </summary>
     public static string GetHmacSha1(string input, string key)
     {

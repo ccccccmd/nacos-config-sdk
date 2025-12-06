@@ -2,22 +2,21 @@ using System.Collections.Concurrent;
 using System.Threading.Channels;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Nacos.V2.Config.Client;
-using Nacos.V2.Config.Models;
-using Nacos.V2.Config.Utils;
+using Nacos.Config.Client;
+using Nacos.Config.Models;
 
-namespace Nacos.V2.Config.Listening;
+namespace Nacos.Config.Listening;
 
 /// <summary>
-/// Configuration listening manager using Channel-based long polling
+///     Configuration listening manager using Channel-based long polling
 /// </summary>
 public class ConfigListeningManager : IConfigListeningManager
 {
-    private readonly INacosConfigClient _client;
-    private readonly NacosConfigOptions _options;
-    private readonly ILogger<ConfigListeningManager> _logger;
-    private readonly ConcurrentDictionary<ConfigKey, ConfigCacheEntry> _configCache = new();
     private readonly Channel<ConfigKey> _changedConfigChannel;
+    private readonly INacosConfigClient _client;
+    private readonly ConcurrentDictionary<ConfigKey, ConfigCacheEntry> _configCache = new();
+    private readonly ILogger<ConfigListeningManager> _logger;
+    private readonly NacosConfigOptions _options;
 
     private CancellationTokenSource? _cts;
     private Task? _longPollingTask;
@@ -117,8 +116,14 @@ public class ConfigListeningManager : IConfigListeningManager
         _cts = null;
     }
 
+    public void Dispose()
+    {
+        StopAsync().GetAwaiter().GetResult();
+        _changedConfigChannel.Writer.Complete();
+    }
+
     /// <summary>
-    /// Long polling worker - checks for configuration changes
+    ///     Long polling worker - checks for configuration changes
     /// </summary>
     private async Task LongPollingWorkerAsync(CancellationToken cancellationToken)
     {
@@ -174,7 +179,7 @@ public class ConfigListeningManager : IConfigListeningManager
     }
 
     /// <summary>
-    /// Process changed configurations from channel
+    ///     Process changed configurations from channel
     /// </summary>
     private async Task ProcessChangedConfigsAsync(CancellationToken cancellationToken)
     {
@@ -182,7 +187,8 @@ public class ConfigListeningManager : IConfigListeningManager
 
         try
         {
-            await foreach (var key in _changedConfigChannel.Reader.ReadAllAsync(cancellationToken).ConfigureAwait(false))
+            await foreach (var key in _changedConfigChannel.Reader.ReadAllAsync(cancellationToken)
+                               .ConfigureAwait(false))
             {
                 try
                 {
@@ -204,7 +210,7 @@ public class ConfigListeningManager : IConfigListeningManager
     }
 
     /// <summary>
-    /// Process a single configuration change
+    ///     Process a single configuration change
     /// </summary>
     private async Task ProcessConfigChangeAsync(ConfigKey key, CancellationToken cancellationToken)
     {
@@ -231,11 +237,5 @@ public class ConfigListeningManager : IConfigListeningManager
             _logger.LogInformation("Triggered listeners for {DataId}/{Group}, new MD5: {Md5}",
                 key.DataId, key.Group, configData.Md5);
         }
-    }
-
-    public void Dispose()
-    {
-        StopAsync().GetAwaiter().GetResult();
-        _changedConfigChannel.Writer.Complete();
     }
 }

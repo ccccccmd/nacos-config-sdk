@@ -5,7 +5,7 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{827E0CD3-B72D-47B6-A68D-7590B98EB39B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "nacos-config-sdk-v2", "src\nacos-config-sdk-v2.csproj", "{FB02D651-6D89-4876-994C-A90F0597D227}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NacosConfigSdk", "src\NacosConfigSdk.csproj", "{FB02D651-6D89-4876-994C-A90F0597D227}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "samples", "samples", "{5D20AA90-6969-D8BD-9DCD-8634F4692FDA}"
 EndProject

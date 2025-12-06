@@ -1,28 +1,28 @@
-using Xunit;
+using System.Threading.Channels;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Nacos.V2.Config.Core;
-using Nacos.V2.Config.Extensions;
+using Nacos.Config.Core;
+using Nacos.Config.Extensions;
 
 namespace NacosConfigTests;
 
 /// <summary>
-/// Integration tests for basic config operations
-/// Requires running Nacos server
+///     Integration tests for basic config operations
+///     Requires running Nacos server
 /// </summary>
 public class ConfigOperationsTests : IAsyncLifetime
 {
-    private ServiceProvider _serviceProvider = null!;
     private INacosConfigService _configService = null!;
     private ILogger<ConfigOperationsTests> _logger = null!;
+    private ServiceProvider _serviceProvider = null!;
 
     public async Task InitializeAsync()
     {
         // Load configuration from appsettings.Test.json
         var configuration = new ConfigurationBuilder()
             .SetBasePath(Directory.GetCurrentDirectory())
-            .AddJsonFile("appsettings.Test.json", optional: false)
+            .AddJsonFile("appsettings.Test.json", false)
             .Build();
 
         var services = new ServiceCollection();
@@ -35,10 +35,7 @@ public class ConfigOperationsTests : IAsyncLifetime
         });
 
         // Add Nacos configuration service from config file
-        services.AddNacosConfigService(options =>
-        {
-            configuration.GetSection("Nacos").Bind(options);
-        });
+        services.AddNacosConfigService(options => { configuration.GetSection("Nacos").Bind(options); });
 
         _serviceProvider = services.BuildServiceProvider();
         _configService = _serviceProvider.GetRequiredService<INacosConfigService>();
@@ -55,7 +52,7 @@ public class ConfigOperationsTests : IAsyncLifetime
             {
                 await _serviceProvider.DisposeAsync();
             }
-            catch (System.Threading.Channels.ChannelClosedException)
+            catch (ChannelClosedException)
             {
                 // Expected during test cleanup when ConfigListeningManager disposes
                 // Channel may already be closed, which is fine
@@ -70,11 +67,11 @@ public class ConfigOperationsTests : IAsyncLifetime
         var dataId = "test-config";
         var group = "DEFAULT_GROUP";
         var content = """
-            {
-                "name": "Test Config",
-                "version": "1.0.0"
-            }
-            """;
+                      {
+                          "name": "Test Config",
+                          "version": "1.0.0"
+                      }
+                      """;
 
         try
         {
@@ -98,10 +95,10 @@ public class ConfigOperationsTests : IAsyncLifetime
         var dataId = "test-get-config";
         var group = "DEFAULT_GROUP";
         var expectedContent = """
-            {
-                "test": "value"
-            }
-            """;
+                              {
+                                  "test": "value"
+                              }
+                              """;
 
         try
         {

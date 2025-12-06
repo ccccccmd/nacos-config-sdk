@@ -1,16 +1,16 @@
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
 
-namespace Nacos.V2.Config.Transport;
+namespace Nacos.Config.Transport;
 
 /// <summary>
-/// Round-robin server selector with health management
+///     Round-robin server selector with health management
 /// </summary>
 public class RoundRobinServerSelector : IServerSelector
 {
-    private readonly IReadOnlyList<string> _servers;
     private readonly ConcurrentDictionary<string, ServerHealthInfo> _healthMap;
     private readonly ILogger<RoundRobinServerSelector> _logger;
+    private readonly IReadOnlyList<string> _servers;
     private int _currentIndex;
 
     public RoundRobinServerSelector(
@@ -84,7 +84,10 @@ public class RoundRobinServerSelector : IServerSelector
         }
     }
 
-    public IReadOnlyList<string> GetAllServers() => _servers;
+    public IReadOnlyList<string> GetAllServers()
+    {
+        return _servers;
+    }
 
     public void RefreshServerList()
     {
@@ -98,7 +101,7 @@ public class RoundRobinServerSelector : IServerSelector
         foreach (var (server, health) in _healthMap)
         {
             // Try to recover servers that have been unhealthy for more than 10 seconds
-            if(!health.IsHealthy() && (now - health.LastFailureTime).TotalSeconds > 10)
+            if (!health.IsHealthy() && (now - health.LastFailureTime).TotalSeconds > 10)
             {
                 health.Reset();
                 _logger.LogInformation("Attempting recovery for server {Server}", server);
@@ -111,7 +114,7 @@ public class RoundRobinServerSelector : IServerSelector
         foreach (var address in addresses)
         {
             var normalized = address.TrimEnd('/');
-            
+
             // Ensure http:// or https:// prefix
             if (!normalized.StartsWith("http://", StringComparison.OrdinalIgnoreCase) &&
                 !normalized.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
@@ -124,23 +127,25 @@ public class RoundRobinServerSelector : IServerSelector
     }
 
     /// <summary>
-    /// Server health information
+    ///     Server health information
     /// </summary>
     private class ServerHealthInfo
     {
         private const int FailureThreshold = 3;
         private int _failureCount;
-        private DateTimeOffset _lastFailureTime;
 
         public int FailureCount => _failureCount;
-        public DateTimeOffset LastFailureTime => _lastFailureTime;
+        public DateTimeOffset LastFailureTime { get; private set; }
 
-        public bool IsHealthy() => _failureCount < FailureThreshold;
+        public bool IsHealthy()
+        {
+            return _failureCount < FailureThreshold;
+        }
 
         public void MarkFailed()
         {
             Interlocked.Increment(ref _failureCount);
-            _lastFailureTime = DateTimeOffset.UtcNow;
+            LastFailureTime = DateTimeOffset.UtcNow;
         }
 
         public void MarkHealthy()

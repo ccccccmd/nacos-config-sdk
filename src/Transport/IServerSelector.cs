@@ -1,32 +1,32 @@
-namespace Nacos.V2.Config.Transport;
+namespace Nacos.Config.Transport;
 
 /// <summary>
-/// Server selector interface for load balancing and failover
+///     Server selector interface for load balancing and failover
 /// </summary>
 public interface IServerSelector
 {
     /// <summary>
-    /// Select a server address
+    ///     Select a server address
     /// </summary>
     string SelectServer();
 
     /// <summary>
-    /// Mark a server as failed
+    ///     Mark a server as failed
     /// </summary>
     void MarkServerFailed(string serverAddress);
 
     /// <summary>
-    /// Mark a server as healthy
+    ///     Mark a server as healthy
     /// </summary>
     void MarkServerHealthy(string serverAddress);
 
     /// <summary>
-    /// Get all server addresses
+    ///     Get all server addresses
     /// </summary>
     IReadOnlyList<string> GetAllServers();
 
     /// <summary>
-    /// Refresh server list (for dynamic server discovery in future)
+    ///     Refresh server list (for dynamic server discovery in future)
     /// </summary>
     void RefreshServerList();
 }

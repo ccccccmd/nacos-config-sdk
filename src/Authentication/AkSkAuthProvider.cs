@@ -1,19 +1,17 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Nacos.V2.Config.Models;
-using Nacos.V2.Config.Utils;
+using Nacos.Config.Models;
+using Nacos.Config.Utils;
 
-namespace Nacos.V2.Config.Authentication;
+namespace Nacos.Config.Authentication;
 
 /// <summary>
-/// AK/SK signature-based authentication provider
+///     AK/SK signature-based authentication provider
 /// </summary>
 public class AkSkAuthProvider : IAuthenticationProvider
 {
-    private readonly NacosConfigOptions _options;
     private readonly ILogger<AkSkAuthProvider> _logger;
-
-    public bool IsEnabled { get; }
+    private readonly NacosConfigOptions _options;
 
     public AkSkAuthProvider(
         IOptions<NacosConfigOptions> options,
@@ -25,6 +23,8 @@ public class AkSkAuthProvider : IAuthenticationProvider
         IsEnabled = !string.IsNullOrWhiteSpace(_options.AccessKey) &&
                     !string.IsNullOrWhiteSpace(_options.SecretKey);
     }
+
+    public bool IsEnabled { get; }
 
     public Task InitializeAsync(CancellationToken cancellationToken = default)
     {
@@ -70,7 +70,7 @@ public class AkSkAuthProvider : IAuthenticationProvider
         }
 
         // Build resource string from parameters
-        string resource = string.Empty;
+        var resource = string.Empty;
 
         if (parameters.TryGetValue("tenant", out var tenant) &&
             parameters.TryGetValue("group", out var group))

@@ -1,14 +1,14 @@
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Nacos.V2.Config.Models;
-using Nacos.V2.Config.Transport;
-using Nacos.V2.Config.Utils;
+using Nacos.Config.Models;
+using Nacos.Config.Transport;
+using Nacos.Config.Utils;
 
-namespace Nacos.V2.Config.Authentication;
+namespace Nacos.Config.Authentication;
 
 /// <summary>
-/// Username/password authentication provider with automatic token refresh
+///     Username/password authentication provider with automatic token refresh
 /// </summary>
 public class UsernamePasswordAuthProvider : IAuthenticationProvider, IDisposable
 {
@@ -19,7 +19,7 @@ public class UsernamePasswordAuthProvider : IAuthenticationProvider, IDisposable
     private readonly SemaphoreSlim _loginLock = new(1, 1);
     private readonly TokenInfo _tokenInfo = new();
 
-#if  NET6_0_OR_GREATER
+#if NET6_0_OR_GREATER
     private PeriodicTimer? _refreshTimer;
 #else
     private Timer? _refreshTimer;
@@ -93,14 +93,15 @@ public class UsernamePasswordAuthProvider : IAuthenticationProvider, IDisposable
 
         if (string.IsNullOrEmpty(_tokenInfo.AccessToken))
         {
-            _logger.LogWarning("ApplyAuthentication called but AccessToken is NULL or EMPTY. TokenTtl: {Ttl}, LastRefresh: {LastRefresh}", 
+            _logger.LogWarning(
+                "ApplyAuthentication called but AccessToken is NULL or EMPTY. TokenTtl: {Ttl}, LastRefresh: {LastRefresh}",
                 _tokenInfo.TokenTtl, _tokenInfo.LastRefreshTime);
             return;
         }
 
         // Add access token to parameters
         parameters[NacosConstants.AccessTokenHeader] = _tokenInfo.AccessToken!;
-        _logger.LogDebug("Applied accessToken to parameters: {TokenPreview}...", 
+        _logger.LogDebug("Applied accessToken to parameters: {TokenPreview}...",
             _tokenInfo.AccessToken.Length > 20 ? _tokenInfo.AccessToken.Substring(0, 20) : _tokenInfo.AccessToken);
     }
 
@@ -187,13 +188,14 @@ public class UsernamePasswordAuthProvider : IAuthenticationProvider, IDisposable
                 return true;
             }
 
-            _logger.LogWarning("Login response from {Server} missing required fields. Response: {Content}", 
+            _logger.LogWarning("Login response from {Server} missing required fields. Response: {Content}",
                 serverAddress, responseContent);
             return false;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Exception during login to {Server}. Exception type: {ExceptionType}, Message: {Message}", 
+            _logger.LogError(ex,
+                "Exception during login to {Server}. Exception type: {ExceptionType}, Message: {Message}",
                 serverAddress, ex.GetType().Name, ex.Message);
             return false;
         }

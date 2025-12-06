@@ -1,14 +1,12 @@
-using Nacos.V2.Config.Models;
-
-namespace Nacos.V2.Config.Utils;
+namespace Nacos.Config.Utils;
 
 /// <summary>
-/// Configuration validator
+///     Configuration validator
 /// </summary>
 public static class ConfigValidator
 {
     /// <summary>
-    /// Validate dataId and group
+    ///     Validate dataId and group
     /// </summary>
     public static void ValidateKey(string dataId, string group)
     {
@@ -17,7 +15,7 @@ public static class ConfigValidator
     }
 
     /// <summary>
-    /// Validate dataId
+    ///     Validate dataId
     /// </summary>
     public static void ValidateDataId(string dataId)
     {
@@ -28,7 +26,7 @@ public static class ConfigValidator
     }
 
     /// <summary>
-    /// Validate group
+    ///     Validate group
     /// </summary>
     public static void ValidateGroup(string group)
     {
@@ -39,7 +37,7 @@ public static class ConfigValidator
     }
 
     /// <summary>
-    /// Validate content for publishing
+    ///     Validate content for publishing
     /// </summary>
     public static void ValidateContent(string? content)
     {
@@ -50,7 +48,7 @@ public static class ConfigValidator
     }
 
     /// <summary>
-    /// Normalize group to default if null or whitespace
+    ///     Normalize group to default if null or whitespace
     /// </summary>
     public static string NormalizeGroup(string? group)
     {

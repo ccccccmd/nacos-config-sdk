@@ -1,18 +1,18 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Nacos.V2.Config.Models;
+using Nacos.Config.Models;
 
-namespace Nacos.V2.Config.Transport;
+namespace Nacos.Config.Transport;
 
 /// <summary>
-/// HTTP transport implementation using IHttpClientFactory
+///     HTTP transport implementation using IHttpClientFactory
 /// </summary>
 public class NacosHttpTransport : IHttpTransport
 {
     private readonly IHttpClientFactory _httpClientFactory;
-    private readonly IServerSelector _serverSelector;
-    private readonly NacosConfigOptions _options;
     private readonly ILogger<NacosHttpTransport> _logger;
+    private readonly NacosConfigOptions _options;
+    private readonly IServerSelector _serverSelector;
 
     public NacosHttpTransport(
         IHttpClientFactory httpClientFactory,

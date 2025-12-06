@@ -1,22 +1,23 @@
+using System.Net;
 using System.Text;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Nacos.V2.Config.Authentication;
-using Nacos.V2.Config.Models;
-using Nacos.V2.Config.Transport;
-using Nacos.V2.Config.Utils;
+using Nacos.Config.Authentication;
+using Nacos.Config.Models;
+using Nacos.Config.Transport;
+using Nacos.Config.Utils;
 
-namespace Nacos.V2.Config.Client;
+namespace Nacos.Config.Client;
 
 /// <summary>
-/// Nacos configuration HTTP API client implementation
+///     Nacos configuration HTTP API client implementation
 /// </summary>
 public class NacosConfigClient : INacosConfigClient
 {
-    private readonly IHttpTransport _transport;
     private readonly IAuthenticationProvider _authProvider;
-    private readonly NacosConfigOptions _options;
     private readonly ILogger<NacosConfigClient> _logger;
+    private readonly NacosConfigOptions _options;
+    private readonly IHttpTransport _transport;
 
     public NacosConfigClient(
         IHttpTransport transport,
@@ -68,7 +69,7 @@ public class NacosConfigClient : INacosConfigClient
         {
             var response = await _transport.SendAsync(request, cts.Token).ConfigureAwait(false);
 
-            if (response.StatusCode == System.Net.HttpStatusCode.OK)
+            if (response.StatusCode == HttpStatusCode.OK)
             {
                 var content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 
@@ -85,12 +86,14 @@ public class NacosConfigClient : INacosConfigClient
 
                 return new ConfigData(content, contentType, md5);
             }
-            else if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+
+            if (response.StatusCode == HttpStatusCode.NotFound)
             {
                 _logger.LogWarning("Config {DataId}/{Group} not found", key.DataId, key.Group);
                 return null;
             }
-            else if (response.StatusCode == System.Net.HttpStatusCode.Forbidden)
+
+            if (response.StatusCode == HttpStatusCode.Forbidden)
             {
                 var error = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
                 _logger.LogError("Access denied for config {DataId}/{Group}: {Error}",
@@ -155,12 +158,13 @@ public class NacosConfigClient : INacosConfigClient
         {
             var response = await _transport.SendAsync(request, cts.Token).ConfigureAwait(false);
 
-            if (response.StatusCode == System.Net.HttpStatusCode.OK)
+            if (response.StatusCode == HttpStatusCode.OK)
             {
                 _logger.LogInformation("Published config {DataId}/{Group}", key.DataId, key.Group);
                 return true;
             }
-            else if (response.StatusCode == System.Net.HttpStatusCode.Forbidden)
+
+            if (response.StatusCode == HttpStatusCode.Forbidden)
             {
                 var error = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
                 _logger.LogError("Access denied for publishing config {DataId}/{Group}: {Error}",
@@ -222,12 +226,13 @@ public class NacosConfigClient : INacosConfigClient
         {
             var response = await _transport.SendAsync(request, cts.Token).ConfigureAwait(false);
 
-            if (response.StatusCode == System.Net.HttpStatusCode.OK)
+            if (response.StatusCode == HttpStatusCode.OK)
             {
                 _logger.LogInformation("Removed config {DataId}/{Group}", key.DataId, key.Group);
                 return true;
             }
-            else if (response.StatusCode == System.Net.HttpStatusCode.Forbidden)
+
+            if (response.StatusCode == HttpStatusCode.Forbidden)
             {
                 var error = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
                 _logger.LogError("Access denied for removing config {DataId}/{Group}: {Error}",
@@ -249,7 +254,7 @@ public class NacosConfigClient : INacosConfigClient
         }
         catch (Exception ex) when (ex is not UnauthorizedAccessException)
         {
-            _logger.LogError(ex, "Error removing config {DataId}/{Group}", key.DataId,key.Group);
+            _logger.LogError(ex, "Error removing config {DataId}/{Group}", key.DataId, key.Group);
             throw;
         }
     }
@@ -303,7 +308,8 @@ public class NacosConfigClient : INacosConfigClient
         {
             var queryString = BuildQueryString(queryParameters);
             path = $"{path}?{queryString}";
-            _logger.LogDebug("Listener endpoint with auth query: {Path}", path.Replace(queryParameters.GetValueOrDefault(NacosConstants.AccessTokenHeader, ""), "***"));
+            _logger.LogDebug("Listener endpoint with auth query: {Path}",
+                path.Replace(queryParameters.GetValueOrDefault(NacosConstants.AccessTokenHeader, ""), "***"));
         }
 
         using var request = new HttpRequestMessage(HttpMethod.Post, path);
@@ -312,7 +318,7 @@ public class NacosConfigClient : INacosConfigClient
         AddCommonHeaders(request);
 
         // Long polling timeout + buffer
-        var requestTimeout = timeoutMs + (timeoutMs / 2);
+        var requestTimeout = timeoutMs + timeoutMs / 2;
 
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         cts.CancelAfter(TimeSpan.FromMilliseconds(requestTimeout));
@@ -321,22 +327,21 @@ public class NacosConfigClient : INacosConfigClient
         {
             var response = await _transport.SendAsync(request, cts.Token).ConfigureAwait(false);
 
-            if (response.StatusCode == System.Net.HttpStatusCode.OK)
+            if (response.StatusCode == HttpStatusCode.OK)
             {
                 var responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
                 return ParseChangedConfigs(responseContent);
             }
-            else if (response.StatusCode == System.Net.HttpStatusCode.Forbidden)
+
+            if (response.StatusCode == HttpStatusCode.Forbidden)
             {
                 var error = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
                 _logger.LogError("Long polling access denied: {Error}", error);
                 throw new UnauthorizedAccessException($"Long polling access denied: {error}");
             }
-            else
-            {
-                _logger.LogWarning("Long polling returned {StatusCode}", response.StatusCode);
-                return new List<ConfigKey>();
-            }
+
+            _logger.LogWarning("Long polling returned {StatusCode}", response.StatusCode);
+            return new List<ConfigKey>();
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {

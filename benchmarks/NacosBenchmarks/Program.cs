@@ -1,19 +1,20 @@
-﻿using BenchmarkDotNet.Attributes;
+﻿using System.Threading.Channels;
+using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Nacos.V2.Config.Core;
-using Nacos.V2.Config.Extensions;
+using Nacos.Config.Core;
+using Nacos.Config.Extensions;
 
 namespace NacosBenchmarks;
 
-class Program
+internal class Program
 {
-    static void Main(string[] args)
+    private static void Main(string[] args)
     {
         //var summary = BenchmarkRunner.Run<ConfigOperationBenchmarks>();
-       var summary = BenchmarkRunner.Run<ConnectionPoolingBenchmarks>();
+        var summary = BenchmarkRunner.Run<ConnectionPoolingBenchmarks>();
     }
 }
 
@@ -21,17 +22,17 @@ class Program
 [SimpleJob(warmupCount: 3, iterationCount: 10)]
 public class ConfigOperationBenchmarks
 {
-    private ServiceProvider _serviceProvider = null!;
-    private INacosConfigService _configService = null!;
     private const string TestDataId = "benchmark-config";
     private const string TestGroup = "BENCHMARK_GROUP";
+    private INacosConfigService _configService = null!;
+    private ServiceProvider _serviceProvider = null!;
 
     [GlobalSetup]
     public void Setup()
     {
         var configuration = new ConfigurationBuilder()
             .SetBasePath(Directory.GetCurrentDirectory())
-            .AddJsonFile("appsettings.Benchmark.json", optional: false)
+            .AddJsonFile("appsettings.Benchmark.json", false)
             .Build();
 
         var services = new ServiceCollection();
@@ -59,7 +60,7 @@ public class ConfigOperationBenchmarks
         {
             _serviceProvider?.Dispose();
         }
-        catch (System.Threading.Channels.ChannelClosedException)
+        catch (ChannelClosedException)
         {
             // Expected during cleanup, channel already closed
         }
@@ -90,15 +91,15 @@ public class ConfigOperationBenchmarks
 [SimpleJob(warmupCount: 2, iterationCount: 5)]
 public class ConnectionPoolingBenchmarks
 {
-    private ServiceProvider _serviceProvider = null!;
     private INacosConfigService _configService = null!;
+    private ServiceProvider _serviceProvider = null!;
 
     [GlobalSetup]
     public void Setup()
     {
         var configuration = new ConfigurationBuilder()
             .SetBasePath(Directory.GetCurrentDirectory())
-            .AddJsonFile("appsettings.Benchmark.json", optional: false)
+            .AddJsonFile("appsettings.Benchmark.json", false)
             .Build();
 
         var services = new ServiceCollection();
@@ -122,7 +123,7 @@ public class ConnectionPoolingBenchmarks
         {
             _serviceProvider?.Dispose();
         }
-        catch (System.Threading.Channels.ChannelClosedException)
+        catch (ChannelClosedException)
         {
             // Expected during cleanup, channel already closed
         }
@@ -136,7 +137,7 @@ public class ConnectionPoolingBenchmarks
     {
         var tasks = new Task[requestCount];
 
-        for (int i = 0; i < requestCount; i++)
+        for (var i = 0; i < requestCount; i++)
         {
             var dataId = $"concurrent-config-{i % 10}"; // Reuse 10 configs
             tasks[i] = _configService.GetConfigAsync(dataId, "DEFAULT_GROUP");
@@ -150,9 +151,9 @@ public class ConnectionPoolingBenchmarks
 [SimpleJob(warmupCount: 1, iterationCount: 3)]
 public class SnapshotPerformanceBenchmarks
 {
-    private ServiceProvider _serviceProvider = null!;
-    private INacosConfigService _configService = null!;
     private const int ConfigCount = 100;
+    private INacosConfigService _configService = null!;
+    private ServiceProvider _serviceProvider = null!;
 
     [Params(true, false)] public bool EnableSnapshot { get; set; }
 
@@ -161,7 +162,7 @@ public class SnapshotPerformanceBenchmarks
     {
         var configuration = new ConfigurationBuilder()
             .SetBasePath(Directory.GetCurrentDirectory())
-            .AddJsonFile("appsettings.Benchmark.json", optional: false)
+            .AddJsonFile("appsettings.Benchmark.json", false)
             .Build();
 
         var services = new ServiceCollection();
@@ -185,7 +186,7 @@ public class SnapshotPerformanceBenchmarks
         {
             _serviceProvider?.Dispose();
         }
-        catch (System.Threading.Channels.ChannelClosedException)
+        catch (ChannelClosedException)
         {
             // Expected during cleanup, channel already closed
         }
@@ -196,7 +197,7 @@ public class SnapshotPerformanceBenchmarks
     {
         var tasks = new Task<string?>[ConfigCount];
 
-        for (int i = 0; i < ConfigCount; i++)
+        for (var i = 0; i < ConfigCount; i++)
         {
             var dataId = $"snapshot-test-{i % 10}";
             tasks[i] = _configService.GetConfigAsync(dataId, "DEFAULT_GROUP");

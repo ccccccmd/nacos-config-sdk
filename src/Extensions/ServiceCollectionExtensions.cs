@@ -1,24 +1,27 @@
+using System.Net;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Nacos.V2.Config.Authentication;
-using Nacos.V2.Config.Client;
-using Nacos.V2.Config.Core;
-using Nacos.V2.Config.Listening;
-using Nacos.V2.Config.Models;
-using Nacos.V2.Config.Storage;
-using Nacos.V2.Config.Transport;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using Nacos.Config.Authentication;
+using Nacos.Config.Client;
+using Nacos.Config.Core;
+using Nacos.Config.Listening;
+using Nacos.Config.Models;
+using Nacos.Config.Storage;
+using Nacos.Config.Transport;
 using Polly;
 using Polly.Extensions.Http;
 
-namespace Nacos.V2.Config.Extensions;
+namespace Nacos.Config.Extensions;
 
 /// <summary>
-/// Service collection extensions for Nacos configuration
+///     Service collection extensions for Nacos configuration
 /// </summary>
 public static class ServiceCollectionExtensions
 {
     /// <summary>
-    /// Add Nacos configuration service
+    ///     Add Nacos configuration service
     /// </summary>
     public static IServiceCollection AddNacosConfigService(
         this IServiceCollection services,
@@ -48,10 +51,11 @@ public static class ServiceCollectionExtensions
             {
                 // Calculate timeout: need to accommodate long-polling requests
                 // Long polling timeout + buffer (50%) + safety margin
-                var longPollingTimeout = tempOptions.LongPollingTimeoutMs + (tempOptions.LongPollingTimeoutMs / 2) + 10000;
+                var longPollingTimeout =
+                    tempOptions.LongPollingTimeoutMs + tempOptions.LongPollingTimeoutMs / 2 + 10000;
                 var defaultTimeout = tempOptions.DefaultTimeoutMs + 10000;
                 var maxTimeout = Math.Max(longPollingTimeout, defaultTimeout);
-                
+
                 client.Timeout = TimeSpan.FromMilliseconds(maxTimeout);
             })
             .AddPolicyHandler(GetRetryPolicy(tempOptions));
@@ -59,8 +63,8 @@ public static class ServiceCollectionExtensions
         // Register server selector
         services.TryAddSingleton<IServerSelector>(sp =>
         {
-            var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<RoundRobinServerSelector>>();
-            var options = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<NacosConfigOptions>>();
+            var logger = sp.GetRequiredService<ILogger<RoundRobinServerSelector>>();
+            var options = sp.GetRequiredService<IOptions<NacosConfigOptions>>();
             return new RoundRobinServerSelector(options.Value.ServerAddresses, logger);
         });
 
@@ -70,14 +74,14 @@ public static class ServiceCollectionExtensions
         // Register authentication provider based on configuration
         services.TryAddSingleton<IAuthenticationProvider>(sp =>
         {
-            var options = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<NacosConfigOptions>>();
-            var httpClientFactory = sp.GetRequiredService<System.Net.Http.IHttpClientFactory>();
+            var options = sp.GetRequiredService<IOptions<NacosConfigOptions>>();
+            var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
             var serverSelector = sp.GetRequiredService<IServerSelector>();
 
             // Priority: Username/Password > AK/SK > Null
             if (!string.IsNullOrWhiteSpace(options.Value.UserName))
             {
-                var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<UsernamePasswordAuthProvider>>();
+                var logger = sp.GetRequiredService<ILogger<UsernamePasswordAuthProvider>>();
                 var provider = new UsernamePasswordAuthProvider(httpClientFactory, serverSelector, options, logger);
 
                 // Initialize authentication
@@ -85,20 +89,19 @@ public static class ServiceCollectionExtensions
 
                 return provider;
             }
-            else if (!string.IsNullOrWhiteSpace(options.Value.AccessKey) &&
-                     !string.IsNullOrWhiteSpace(options.Value.SecretKey))
+
+            if (!string.IsNullOrWhiteSpace(options.Value.AccessKey) &&
+                !string.IsNullOrWhiteSpace(options.Value.SecretKey))
             {
-                var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<AkSkAuthProvider>>();
+                var logger = sp.GetRequiredService<ILogger<AkSkAuthProvider>>();
                 var provider = new AkSkAuthProvider(options, logger);
 
                 provider.InitializeAsync().GetAwaiter().GetResult();
 
                 return provider;
             }
-            else
-            {
-                return new NullAuthProvider();
-            }
+
+            return new NullAuthProvider();
         });
 
         // Register client
@@ -117,16 +120,16 @@ public static class ServiceCollectionExtensions
     }
 
     /// <summary>
-    /// Get Polly retry policy for HTTP requests
+    ///     Get Polly retry policy for HTTP requests
     /// </summary>
     private static IAsyncPolicy<HttpResponseMessage> GetRetryPolicy(NacosConfigOptions options)
     {
         return HttpPolicyExtensions
             .HandleTransientHttpError() // Handles 5xx and 408
-            .OrResult(msg => msg.StatusCode == System.Net.HttpStatusCode.TooManyRequests) // 429
+            .OrResult(msg => msg.StatusCode == HttpStatusCode.TooManyRequests) // 429
             .WaitAndRetryAsync(
-                retryCount: options.MaxRetry,
-                sleepDurationProvider: retryAttempt => 
+                options.MaxRetry,
+                retryAttempt =>
                 {
                     // Exponential backoff: RetryDelayMs * 2^(retryAttempt-1)
                     // Attempt 1: RetryDelayMs
@@ -135,11 +138,12 @@ public static class ServiceCollectionExtensions
                     var delay = options.RetryDelayMs * Math.Pow(2, retryAttempt - 1);
                     return TimeSpan.FromMilliseconds(delay);
                 },
-                onRetry: (outcome, timespan, retryAttempt, context) =>
+                (outcome, timespan, retryAttempt, context) =>
                 {
                     // Log retry attempts (will be picked up by ILogger if configured)
                     var statusCode = outcome.Result?.StatusCode.ToString() ?? "Exception";
-                    Console.WriteLine($"Retry {retryAttempt}/{options.MaxRetry} after {timespan.TotalSeconds:F1}s due to {statusCode}");
+                    Console.WriteLine(
+                        $"Retry {retryAttempt}/{options.MaxRetry} after {timespan.TotalSeconds:F1}s due to {statusCode}");
                 });
     }
 }

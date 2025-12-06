@@ -1,14 +1,14 @@
-using Nacos.V2.Config.Models;
+using Nacos.Config.Models;
 
-namespace Nacos.V2.Config.Client;
+namespace Nacos.Config.Client;
 
 /// <summary>
-/// Nacos configuration HTTP API client interface
+///     Nacos configuration HTTP API client interface
 /// </summary>
 public interface INacosConfigClient
 {
     /// <summary>
-    /// Get configuration from Nacos server
+    ///     Get configuration from Nacos server
     /// </summary>
     Task<ConfigData?> GetConfigAsync(
         ConfigKey key,
@@ -16,7 +16,7 @@ public interface INacosConfigClient
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Publish configuration to Nacos server
+    ///     Publish configuration to Nacos server
     /// </summary>
     Task<bool> PublishConfigAsync(
         ConfigKey key,
@@ -25,14 +25,14 @@ public interface INacosConfigClient
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Remove configuration from Nacos server
+    ///     Remove configuration from Nacos server
     /// </summary>
     Task<bool> RemoveConfigAsync(
         ConfigKey key,
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Listen for configuration changes (long polling)
+    ///     Listen for configuration changes (long polling)
     /// </summary>
     Task<List<ConfigKey>> ListenConfigChangesAsync(
         IEnumerable<(ConfigKey Key, string Md5)> configs,

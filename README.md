@@ -1,4 +1,4 @@
-# Nacos Configuration SDK v2
+# Nacos Configuration SDK
 
 简化的、HTTP-only 的 Nacos 配置中心 SDK,基于现代 .NET 最佳实践重新设计。
 
@@ -28,7 +28,7 @@
 ### 1. 安装
 
 ```bash
-dotnet add package nacos-config-sdk-v2
+dotnet add package nacos-config-sdk
 ```
 
 ### 2. 配置服务
@@ -36,7 +36,7 @@ dotnet add package nacos-config-sdk-v2
 #### 使用 Username/Password 认证
 
 ```csharp
-using Nacos.V2.Config.Extensions;
+using Nacos.Config.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -77,7 +77,7 @@ builder.Services.AddNacosConfigService(options =>
 ### 3. 使用配置服务
 
 ```csharp
-using Nacos.V2.Config.Core;
+using Nacos.Config.Core;
 
 public class YourService
 {
@@ -242,11 +242,10 @@ INacosConfigService (Core)
 **低优先级:**
 - [ ] 配置对比和合并工具
 - [ ] 健康检查端点
-- [ ] Metrics 导出 (Prometheus 格式)
 
 ## 对比现有 SDK
 
-| 方面 | 现有 SDK | v2 SDK |
+| 方面 | 现有 SDK | ME |
 |------|----------|--------|
 | HTTP Client | ❌ 静态实例 | ✅ IHttpClientFactory |
 | 异步模式 | ⚠️ Timer递归 | ✅ Task/Channel |

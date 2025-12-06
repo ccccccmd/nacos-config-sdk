@@ -1,14 +1,14 @@
-using Nacos.V2.Config.Models;
+using Nacos.Config.Models;
 
-namespace Nacos.V2.Config.Listening;
+namespace Nacos.Config.Listening;
 
 /// <summary>
-/// Configuration cache entry with listeners
+///     Configuration cache entry with listeners
 /// </summary>
 internal class ConfigCacheEntry
 {
-    private readonly SemaphoreSlim _lock = new(1, 1);
     private readonly List<Action<ConfigChangedEvent>> _listeners = new();
+    private readonly SemaphoreSlim _lock = new(1, 1);
 
     public ConfigCacheEntry(ConfigKey key, string content, string md5)
     {
@@ -22,7 +22,7 @@ internal class ConfigCacheEntry
     public string Md5 { get; private set; }
 
     /// <summary>
-    /// Add a listener
+    ///     Add a listener
     /// </summary>
     public async Task AddListenerAsync(Action<ConfigChangedEvent> callback)
     {
@@ -41,7 +41,7 @@ internal class ConfigCacheEntry
     }
 
     /// <summary>
-    /// Remove a listener
+    ///     Remove a listener
     /// </summary>
     public async Task<bool> RemoveListenerAsync(Action<ConfigChangedEvent> callback)
     {
@@ -57,7 +57,7 @@ internal class ConfigCacheEntry
     }
 
     /// <summary>
-    /// Update content and trigger listeners if changed
+    ///     Update content and trigger listeners if changed
     /// </summary>
     public async Task<bool> UpdateContentAsync(string newContent, string newMd5)
     {
@@ -88,7 +88,7 @@ internal class ConfigCacheEntry
         if (listenersSnapshot.Length > 0)
         {
             var evt = new ConfigChangedEvent(Key, newContent, oldContent, "text");
-            
+
             foreach (var listener in listenersSnapshot)
             {
                 try
@@ -106,7 +106,7 @@ internal class ConfigCacheEntry
     }
 
     /// <summary>
-    /// Check if there are any listeners
+    ///     Check if there are any listeners
     /// </summary>
     public bool HasListeners()
     {
@@ -114,7 +114,7 @@ internal class ConfigCacheEntry
     }
 
     /// <summary>
-    /// Get listener count
+    ///     Get listener count
     /// </summary>
     public int GetListenerCount()
     {

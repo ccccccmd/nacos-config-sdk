@@ -1,13 +1,12 @@
-namespace Nacos.V2.Config.Authentication;
+namespace Nacos.Config.Authentication;
 
 /// <summary>
-/// Token information for username/password authentication
+///     Token information for username/password authentication
 /// </summary>
 internal class TokenInfo
 {
     private string? _accessToken;
     private long _tokenTtl;
-    private DateTimeOffset _lastRefreshTime;
 
     public string? AccessToken
     {
@@ -21,11 +20,7 @@ internal class TokenInfo
         set => Interlocked.Exchange(ref _tokenTtl, value);
     }
 
-    public DateTimeOffset LastRefreshTime
-    {
-        get => _lastRefreshTime;
-        set => _lastRefreshTime = value;
-    }
+    public DateTimeOffset LastRefreshTime { get; set; }
 
     public long TokenRefreshWindow => TokenTtl / 10;
 

@@ -1,7 +1,7 @@
-namespace Nacos.V2.Config.Models;
+namespace Nacos.Config.Models;
 
 /// <summary>
-/// Configuration data returned from Nacos server
+///     Configuration data returned from Nacos server
 /// </summary>
 public class ConfigData
 {
@@ -14,27 +14,27 @@ public class ConfigData
     }
 
     /// <summary>
-    /// Configuration content
+    ///     Configuration content
     /// </summary>
     public string Content { get; }
 
     /// <summary>
-    /// Content type (json, yaml, xml, text, etc.)
+    ///     Content type (json, yaml, xml, text, etc.)
     /// </summary>
     public string ContentType { get; }
 
     /// <summary>
-    /// MD5 hash of the content
+    ///     MD5 hash of the content
     /// </summary>
     public string Md5 { get; }
 
     /// <summary>
-    /// Encrypted data key (for encrypted configurations)
+    ///     Encrypted data key (for encrypted configurations)
     /// </summary>
     public string? EncryptedDataKey { get; }
 
     /// <summary>
-    /// Check if configuration is empty
+    ///     Check if configuration is empty
     /// </summary>
     public bool IsEmpty => string.IsNullOrEmpty(Content);
 }

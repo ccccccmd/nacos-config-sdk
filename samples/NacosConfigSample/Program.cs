@@ -1,9 +1,9 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Nacos.V2.Config.Core;
-using Nacos.V2.Config.Extensions;
-
+using Nacos.Config.Core;
+using Nacos.Config.Extensions;
+using Nacos.Config.Models;
 
 var builder = Host.CreateApplicationBuilder(args);
 
@@ -25,7 +25,7 @@ builder.Services.AddNacosConfigService(options =>
 
     // Option 1: Username/Password authentication
     options.UserName = "nacos";
-    options.Password =  "nacos";
+    options.Password = "nacos";
     // Option 2: AK/SK authentication
     // options.AccessKey = "your-access-key";
     // options.SecretKey = "your-secret-key";
@@ -45,7 +45,7 @@ var logger = host.Services.GetRequiredService<ILogger<Program>>();
 
 try
 {
-    logger.LogInformation("=== Nacos Config SDK v2 Sample ===\n");
+    logger.LogInformation("=== Nacos Config SDK Sample ===\n");
 
     var testBasicConfig = false;
 
@@ -54,16 +54,16 @@ try
         // Example 1: Publish configuration
         logger.LogInformation("--- Publishing configuration ---");
         var publishResult = await configService.PublishConfigAsync(
-            dataId: "example-config",
-            group: "DEFAULT_GROUP",
-            content: """
-                     {
-                         "name": "Nacos Config Sample",
-                         "version": "2.0.0",
-                         "environment": "development"
-                     }
-                     """,
-            type: "json"
+            "example-config",
+            "DEFAULT_GROUP",
+            """
+            {
+                "name": "Nacos Config Sample",
+                "version": "2.0.0",
+                "environment": "development"
+            }
+            """,
+            "json"
         ).ConfigureAwait(false);
         logger.LogInformation("Publish result: {Result}\n", publishResult);
 
@@ -73,42 +73,42 @@ try
         // Example 2: Get configuration
         logger.LogInformation("--- Getting configuration ---");
         var config = await configService.GetConfigAsync(
-            dataId: "example-config",
-            group: "DEFAULT_GROUP"
+            "example-config",
+            "DEFAULT_GROUP"
         ).ConfigureAwait(false);
         logger.LogInformation("Retrieved config:\n{Config}\n", config);
 
         // Example 3: Update configuration
         logger.LogInformation("--- Updating configuration ---");
         var updateResult = await configService.PublishConfigAsync(
-            dataId: "example-config",
-            group: "DEFAULT_GROUP",
-            content: """
-                     {
-                         "name": "Nacos Config Sample",
-                         "version": "2.1.0",
-                         "environment": "production",
-                         "updated": true
-                     }
-                     """,
-            type: "json"
+            "example-config",
+            "DEFAULT_GROUP",
+            """
+            {
+                "name": "Nacos Config Sample",
+                "version": "2.1.0",
+                "environment": "production",
+                "updated": true
+            }
+            """,
+            "json"
         ).ConfigureAwait(false);
         logger.LogInformation("Update result: {Result}\n", updateResult);
 
         // Example 4: Get updated configuration
         logger.LogInformation("--- Getting updated configuration ---");
         var updatedConfig = await configService.GetConfigAsync(
-            dataId: "example-config",
-            group: "DEFAULT_GROUP"
+            "example-config",
+            "DEFAULT_GROUP"
         ).ConfigureAwait(false);
         logger.LogInformation("Updated config:\n{Config}\n", updatedConfig);
 
         // Example 5: Subscribe to configuration changes
         logger.LogInformation("--- Subscribe to configuration changes ---");
         var subscription = configService.Subscribe(
-            dataId: "example-config",
-            group: "DEFAULT_GROUP",
-            callback: evt =>
+            "example-config",
+            "DEFAULT_GROUP",
+            evt =>
             {
                 logger.LogInformation("Config changed! Old: {Old}, New: {New}",
                     evt.OldContent, evt.NewContent);
@@ -119,21 +119,21 @@ try
         // Example 6: Test different groups
         logger.LogInformation("--- Testing different groups ---");
         await configService.PublishConfigAsync(
-            dataId: "database-config",
-            group: "DATABASE_GROUP",
-            content: """
-                     {
-                         "host": "localhost",
-                         "port": 3306,
-                         "database": "nacos_demo"
-                     }
-                     """,
-            type: "json"
+            "database-config",
+            "DATABASE_GROUP",
+            """
+            {
+                "host": "localhost",
+                "port": 3306,
+                "database": "nacos_demo"
+            }
+            """,
+            "json"
         ).ConfigureAwait(false);
 
         var dbConfig = await configService.GetConfigAsync(
-            dataId: "database-config",
-            group: "DATABASE_GROUP"
+            "database-config",
+            "DATABASE_GROUP"
         ).ConfigureAwait(false);
         logger.LogInformation("Database config:\n{Config}\n", dbConfig);
 
@@ -159,14 +159,14 @@ try
     // Example 7: Basic Configuration Listening Test
     logger.LogInformation("--- Example 7: Basic Configuration Listening ---");
     {
-        var changeDetected = new TaskCompletionSource<Nacos.V2.Config.Models.ConfigChangedEvent>();
+        var changeDetected = new TaskCompletionSource<ConfigChangedEvent>();
         var listenerConfig = "listener-test-config";
 
         // Subscribe to configuration changes
         var sub = configService.Subscribe(
-            dataId: listenerConfig,
-            group: "DEFAULT_GROUP",
-            callback: evt =>
+            listenerConfig,
+            "DEFAULT_GROUP",
+            evt =>
             {
                 logger.LogInformation("[Example 7] Config changed! Old: '{Old}', New: '{New}'",
                     evt.OldContent, evt.NewContent);
@@ -182,10 +182,10 @@ try
 
         // Publish initial configuration
         await configService.PublishConfigAsync(
-            dataId: listenerConfig,
-            group: "DEFAULT_GROUP",
-            content: "Initial Value v1" + Guid.NewGuid(),
-            type: "text"
+            listenerConfig,
+            "DEFAULT_GROUP",
+            "Initial Value v1" + Guid.NewGuid(),
+            "text"
         ).ConfigureAwait(false);
 
         logger.LogInformation("Published initial config, waiting for change detection...");
@@ -210,7 +210,6 @@ try
     }
 
 
-
     // Example 8: Multiple Listeners on Same Configuration
     logger.LogInformation("--- Example 8: Multiple Listeners on Same Configuration ---");
     {
@@ -221,9 +220,9 @@ try
 
         // Add multiple listeners to the same configuration
         var sub1 = configService.Subscribe(
-            dataId: multiListenerConfig,
-            group: "DEFAULT_GROUP",
-            callback: evt =>
+            multiListenerConfig,
+            "DEFAULT_GROUP",
+            evt =>
             {
                 logger.LogInformation("[Listener 1] Received change: {New}", evt.NewContent);
                 listener1Triggered.TrySetResult(true);
@@ -231,9 +230,9 @@ try
         );
 
         var sub2 = configService.Subscribe(
-            dataId: multiListenerConfig,
-            group: "DEFAULT_GROUP",
-            callback: evt =>
+            multiListenerConfig,
+            "DEFAULT_GROUP",
+            evt =>
             {
                 logger.LogInformation("[Listener 2] Received change: {New}", evt.NewContent);
                 listener2Triggered.TrySetResult(true);
@@ -241,9 +240,9 @@ try
         );
 
         var sub3 = configService.Subscribe(
-            dataId: multiListenerConfig,
-            group: "DEFAULT_GROUP",
-            callback: evt =>
+            multiListenerConfig,
+            "DEFAULT_GROUP",
+            evt =>
             {
                 logger.LogInformation("[Listener 3] Received change: {New}", evt.NewContent);
                 listener3Triggered.TrySetResult(true);
@@ -255,10 +254,10 @@ try
 
         // Publish change
         await configService.PublishConfigAsync(
-            dataId: multiListenerConfig,
-            group: "DEFAULT_GROUP",
-            content: "Shared Config Content" + Guid.NewGuid(),
-            type: "text"
+            multiListenerConfig,
+            "DEFAULT_GROUP",
+            "Shared Config Content" + Guid.NewGuid(),
+            "text"
         ).ConfigureAwait(false);
 
         logger.LogInformation("Published config change, waiting for all listeners...");
@@ -297,9 +296,9 @@ try
 
         // Subscribe to two different configurations
         var sub1 = configService.Subscribe(
-            dataId: "app-config",
-            group: "CONFIG_GROUP_1",
-            callback: evt =>
+            "app-config",
+            "CONFIG_GROUP_1",
+            evt =>
             {
                 logger.LogInformation("[Config 1] app-config/CONFIG_GROUP_1 changed: {New}", evt.NewContent);
                 config1Changed.TrySetResult(evt.NewContent);
@@ -307,9 +306,9 @@ try
         );
 
         var sub2 = configService.Subscribe(
-            dataId: "db-config",
-            group: "CONFIG_GROUP_2",
-            callback: evt =>
+            "db-config",
+            "CONFIG_GROUP_2",
+            evt =>
             {
                 logger.LogInformation("[Config 2] db-config/CONFIG_GROUP_2 changed: {New}", evt.NewContent);
                 config2Changed.TrySetResult(evt.NewContent);
@@ -321,10 +320,10 @@ try
 
         // Publish to first config
         await configService.PublishConfigAsync(
-            dataId: "app-config",
-            group: "CONFIG_GROUP_1",
-            content: "App Config v1" + Guid.NewGuid(),
-            type: "text"
+            "app-config",
+            "CONFIG_GROUP_1",
+            "App Config v1" + Guid.NewGuid(),
+            "text"
         ).ConfigureAwait(false);
 
         logger.LogInformation("Published to app-config/CONFIG_GROUP_1");
@@ -333,10 +332,10 @@ try
         await Task.Delay(5000).ConfigureAwait(false);
 
         await configService.PublishConfigAsync(
-            dataId: "db-config",
-            group: "CONFIG_GROUP_2",
-            content: "DB Config v1",
-            type: "text"
+            "db-config",
+            "CONFIG_GROUP_2",
+            "DB Config v1",
+            "text"
         ).ConfigureAwait(false);
 
         logger.LogInformation("Published to db-config/CONFIG_GROUP_2");
@@ -371,9 +370,9 @@ try
 
         // Add listener
         var sub = configService.Subscribe(
-            dataId: removalTestConfig,
-            group: "DEFAULT_GROUP",
-            callback: evt =>
+            removalTestConfig,
+            "DEFAULT_GROUP",
+            evt =>
             {
                 listenerCallCount++;
                 logger.LogInformation("[Removal Test] Change #{Count} detected: {New}",
@@ -395,10 +394,10 @@ try
         // First change - should be detected
         logger.LogInformation("Publishing first change (listener active)...");
         await configService.PublishConfigAsync(
-            dataId: removalTestConfig,
-            group: "DEFAULT_GROUP",
-            content: "First Change" + Guid.NewGuid(),
-            type: "text"
+            removalTestConfig,
+            "DEFAULT_GROUP",
+            "First Change" + Guid.NewGuid(),
+            "text"
         ).ConfigureAwait(false);
 
         await Task.WhenAny(firstChange.Task, Task.Delay(35000)).ConfigureAwait(false);
@@ -416,10 +415,10 @@ try
         // Second change - should NOT be detected
         logger.LogInformation("Publishing second change (listener removed)...");
         await configService.PublishConfigAsync(
-            dataId: removalTestConfig,
-            group: "DEFAULT_GROUP",
-            content: "Second Change",
-            type: "text"
+            removalTestConfig,
+            "DEFAULT_GROUP",
+            "Second Change",
+            "text"
         ).ConfigureAwait(false);
 
         await Task.WhenAny(secondChange.Task, Task.Delay(35000)).ConfigureAwait(false);
@@ -445,9 +444,9 @@ try
         var rapidChangeConfig = "rapid-change-config";
 
         var sub = configService.Subscribe(
-            dataId: rapidChangeConfig,
-            group: "DEFAULT_GROUP",
-            callback: evt =>
+            rapidChangeConfig,
+            "DEFAULT_GROUP",
+            evt =>
             {
                 lock (changeLock)
                 {
@@ -469,10 +468,10 @@ try
         logger.LogInformation("Publishing 3 configuration changes...");
 
         await configService.PublishConfigAsync(
-            dataId: rapidChangeConfig,
-            group: "DEFAULT_GROUP",
-            content: "Change #1",
-            type: "text"
+            rapidChangeConfig,
+            "DEFAULT_GROUP",
+            "Change #1",
+            "text"
         ).ConfigureAwait(false);
 
         // Wait for long-polling cycle (30s timeout + processing time)
@@ -480,20 +479,20 @@ try
         await Task.Delay(35000).ConfigureAwait(false);
 
         await configService.PublishConfigAsync(
-            dataId: rapidChangeConfig,
-            group: "DEFAULT_GROUP",
-            content: "Change #2",
-            type: "text"
+            rapidChangeConfig,
+            "DEFAULT_GROUP",
+            "Change #2",
+            "text"
         ).ConfigureAwait(false);
 
         logger.LogInformation("Waiting for second change to be detected...");
         await Task.Delay(35000).ConfigureAwait(false);
 
         await configService.PublishConfigAsync(
-            dataId: rapidChangeConfig,
-            group: "DEFAULT_GROUP",
-            content: "Change #3",
-            type: "text"
+            rapidChangeConfig,
+            "DEFAULT_GROUP",
+            "Change #3",
+            "text"
         ).ConfigureAwait(false);
 
         logger.LogInformation("Waiting for third change to be detected...");

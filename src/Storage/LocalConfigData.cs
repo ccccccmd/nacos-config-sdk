@@ -1,9 +1,7 @@
-using Nacos.V2.Config.Models;
-
-namespace Nacos.V2.Config.Storage;
+namespace Nacos.Config.Storage;
 
 /// <summary>
-/// Local configuration data with metadata
+///     Local configuration data with metadata
 /// </summary>
 public class LocalConfigData
 {
@@ -14,17 +12,17 @@ public class LocalConfigData
     }
 
     /// <summary>
-    /// Configuration content
+    ///     Configuration content
     /// </summary>
     public string Content { get; }
 
     /// <summary>
-    /// Last modified timestamp
+    ///     Last modified timestamp
     /// </summary>
     public DateTimeOffset LastModified { get; }
 
     /// <summary>
-    /// Check if data is empty
+    ///     Check if data is empty
     /// </summary>
     public bool IsEmpty => string.IsNullOrEmpty(Content);
 }
