@@ -4,15 +4,17 @@
 
 > **Gemini AI 提示**: 这是一个为 .NET 开发者精心设计的轻量级 Nacos 配置中心客户端,专注于简洁、高效和易用性。
 
-## 特性
+## ✨ 核心特性
 
-✅ **仅 HTTP 协议** - 移除 gRPC 依赖,简化调试
-✅ **配置中心专用** - 移除服务发现功能,专注配置管理
-✅ **双重认证** - 支持 Username/Password 和 AK/SK 两种认证方式
-✅ **现代架构** - 使用 IHttpClientFactory、Channel、SemaphoreSlim 等现代 API
-✅ **高可用** - Failover → Server → Snapshot 三级降级策略
-✅ **自动重试** - 内置重试机制和服务器故障转移
-✅ **本地快照** - 自动保存配置快照,离线可用
+| 特性 | 说明 |
+|------|------|
+| 🌐 **仅 HTTP 协议** | 移除 gRPC 依赖,简化调试和部署 |
+| ⚙️ **配置中心专用** | 移除服务发现功能,专注配置管理 |
+| 🔐 **双重认证** | 支持 Username/Password 和 AK/SK 两种认证方式 |
+| 🏗️ **现代架构** | 使用 IHttpClientFactory、Channel、SemaphoreSlim 等现代 API |
+| 🚀 **高可用** | Failover → Server → Snapshot 三级降级策略 |
+| 🔄 **自动重试** | 内置重试机制和服务器故障转移 |
+| 💾 **本地快照** | 自动保存配置快照,支持离线使用 |
 
 ## 支持框架
 
