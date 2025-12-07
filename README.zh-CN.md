@@ -191,7 +191,7 @@ public class YourService
 | 选项 | 说明 | 默认值 |
 |------|------|--------|
 | `ServerAddresses` | Nacos 服务器地址列表 | **必填** |
-| `Namespace` | 命名空间(租户) | "" |
+| `Namespace` | 命名空间(租户)ID | **必填** |
 | `ContextPath` | 上下文路径 | "nacos" |
 | `DefaultTimeoutMs` | 默认超时时间(ms) | 15000 |
 | `UserName` | 用户名(用户名密码认证) | null |

@@ -191,7 +191,7 @@ Default path: `%LocalAppData%/nacos/config/data/...`
 | Option | Description | Default |
 |--------|-------------|---------|
 | `ServerAddresses` | Nacos server address list | **Required** |
-| `Namespace` | NamespaceId | **必填** |
+| `Namespace` | NamespaceId | **Required** |
 | `ContextPath` | Context path | "nacos" |
 | `DefaultTimeoutMs` | Default timeout (ms) | 15000 |
 | `UserName` | Username (for username/password auth) | null |
