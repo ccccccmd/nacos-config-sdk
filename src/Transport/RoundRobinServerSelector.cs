@@ -4,14 +4,18 @@ using Microsoft.Extensions.Logging;
 namespace Nacos.Config.Transport;
 
 /// <summary>
-///     Round-robin server selector with health management
+///     Round-robin server selector with health management and cached healthy server list
 /// </summary>
 public class RoundRobinServerSelector : IServerSelector
 {
     private readonly ConcurrentDictionary<string, ServerHealthInfo> _healthMap;
     private readonly ILogger<RoundRobinServerSelector> _logger;
     private readonly IReadOnlyList<string> _servers;
+    private readonly object _cacheLock = new();
+    
     private int _currentIndex;
+    private volatile IReadOnlyList<string>? _cachedHealthyServers;
+    private volatile int _cacheVersion;
 
     public RoundRobinServerSelector(
         IEnumerable<string> serverAddresses,
@@ -33,24 +37,25 @@ public class RoundRobinServerSelector : IServerSelector
             _healthMap[server] = new ServerHealthInfo();
         }
 
+        // Initialize cache with all servers (all healthy initially)
+        _cachedHealthyServers = _servers;
+        _cacheVersion = 0;
+
         _logger.LogInformation("Initialized server selector with {Count} servers", _servers.Count);
     }
 
     public string SelectServer()
     {
-        var healthyServers = _servers
-            .Where(s => _healthMap.TryGetValue(s, out var health) && health.IsHealthy())
-            .ToList();
+        var healthyServers = GetHealthyServersFromCache();
 
         if (healthyServers.Count == 0)
         {
             _logger.LogWarning("No healthy servers available, trying recovery...");
-            // Try to recover one server
             TryRecoverServers();
-
-            healthyServers = _servers
-                .Where(s => _healthMap.TryGetValue(s, out var health) && health.IsHealthy())
-                .ToList();
+            
+            // Refresh cache after recovery attempt
+            InvalidateCache();
+            healthyServers = GetHealthyServersFromCache();
 
             if (healthyServers.Count == 0)
             {
@@ -61,15 +66,24 @@ public class RoundRobinServerSelector : IServerSelector
         }
 
         // Round-robin selection among healthy servers
-        var index = Interlocked.Increment(ref _currentIndex) % healthyServers.Count;
-        return healthyServers[index];
+        // Use modulo with the current list to handle concurrent changes safely
+        var index = (uint)Interlocked.Increment(ref _currentIndex) % (uint)healthyServers.Count;
+        return healthyServers[(int)index];
     }
 
     public void MarkServerFailed(string serverAddress)
     {
         if (_healthMap.TryGetValue(serverAddress, out var health))
         {
+            var wasHealthy = health.IsHealthy();
             health.MarkFailed();
+            
+            // Only invalidate cache if health state actually changed
+            if (wasHealthy && !health.IsHealthy())
+            {
+                InvalidateCache();
+            }
+            
             _logger.LogWarning("Marked server {Server} as failed (failures: {Failures})",
                 serverAddress, health.FailureCount);
         }
@@ -79,8 +93,16 @@ public class RoundRobinServerSelector : IServerSelector
     {
         if (_healthMap.TryGetValue(serverAddress, out var health))
         {
+            var wasUnhealthy = !health.IsHealthy();
             health.MarkHealthy();
-            _logger.LogInformation("Marked server {Server} as healthy", serverAddress);
+            
+            // Only invalidate cache if health state actually changed
+            if (wasUnhealthy)
+            {
+                InvalidateCache();
+            }
+            
+            _logger.LogDebug("Marked server {Server} as healthy", serverAddress);
         }
     }
 
@@ -91,21 +113,77 @@ public class RoundRobinServerSelector : IServerSelector
 
     public void RefreshServerList()
     {
-        // Currently static server list; can be extended for dynamic discovery
-        _logger.LogDebug("Server list refresh requested (currently static)");
+        InvalidateCache();
+        _logger.LogDebug("Server list refresh requested");
+    }
+
+    /// <summary>
+    ///     Get healthy servers from cache, rebuilding if necessary
+    /// </summary>
+    private IReadOnlyList<string> GetHealthyServersFromCache()
+    {
+        var cached = _cachedHealthyServers;
+        if (cached != null)
+        {
+            return cached;
+        }
+
+        lock (_cacheLock)
+        {
+            // Double-check after acquiring lock
+            cached = _cachedHealthyServers;
+            if (cached != null)
+            {
+                return cached;
+            }
+
+            // Rebuild cache
+            var healthyList = new List<string>(_servers.Count);
+            foreach (var server in _servers)
+            {
+                if (_healthMap.TryGetValue(server, out var health) && health.IsHealthy())
+                {
+                    healthyList.Add(server);
+                }
+            }
+
+            _cachedHealthyServers = healthyList;
+            Interlocked.Increment(ref _cacheVersion);
+            
+            _logger.LogDebug("Rebuilt healthy server cache: {Count}/{Total} healthy", 
+                healthyList.Count, _servers.Count);
+
+            return healthyList;
+        }
+    }
+
+    /// <summary>
+    ///     Invalidate the cached healthy server list
+    /// </summary>
+    private void InvalidateCache()
+    {
+        _cachedHealthyServers = null;
     }
 
     private void TryRecoverServers()
     {
         var now = DateTimeOffset.UtcNow;
+        var recovered = false;
+        
         foreach (var (server, health) in _healthMap)
         {
             // Try to recover servers that have been unhealthy for more than 10 seconds
             if (!health.IsHealthy() && (now - health.LastFailureTime).TotalSeconds > 10)
             {
                 health.Reset();
+                recovered = true;
                 _logger.LogInformation("Attempting recovery for server {Server}", server);
             }
+        }
+
+        if (recovered)
+        {
+            InvalidateCache();
         }
     }
 

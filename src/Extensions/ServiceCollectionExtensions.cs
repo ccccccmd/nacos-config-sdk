@@ -140,10 +140,10 @@ public static class ServiceCollectionExtensions
                 },
                 (outcome, timespan, retryAttempt, context) =>
                 {
-                    // Log retry attempts (will be picked up by ILogger if configured)
+                    // Log retry attempts - uses Debug.WriteLine for diagnostic output
                     var statusCode = outcome.Result?.StatusCode.ToString() ?? "Exception";
-                    Console.WriteLine(
-                        $"Retry {retryAttempt}/{options.MaxRetry} after {timespan.TotalSeconds:F1}s due to {statusCode}");
+                    System.Diagnostics.Debug.WriteLine(
+                        $"[NacosConfigSdk] Retry {retryAttempt}/{options.MaxRetry} after {timespan.TotalSeconds:F1}s due to {statusCode}");
                 });
     }
 }

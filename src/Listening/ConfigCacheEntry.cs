@@ -15,12 +15,14 @@ internal class ConfigCacheEntry
     private readonly Dictionary<Action<ConfigChangedEvent>, Func<ConfigChangedEvent, Task>> _syncToAsyncMap = new();
     
     private readonly SemaphoreSlim _lock = new(1, 1);
+    private readonly long _listenerTimeoutMs;
 
-    public ConfigCacheEntry(ConfigKey key, string content, string md5)
+    public ConfigCacheEntry(ConfigKey key, string content, string md5, long listenerTimeoutMs)
     {
         Key = key;
         Content = content;
         Md5 = md5;
+        _listenerTimeoutMs = listenerTimeoutMs > 0 ? listenerTimeoutMs : 30000;
     }
 
     public ConfigKey Key { get; }
@@ -145,27 +147,58 @@ internal class ConfigCacheEntry
             _lock.Release();
         }
 
-        // Trigger all listeners outside of lock
+        // Trigger all listeners in parallel outside of lock
         if (listenersSnapshot.Length > 0)
         {
             var evt = new ConfigChangedEvent(Key, newContent, oldContent, "text");
-
-            foreach (var listener in listenersSnapshot)
-            {
-                try
-                {
-                    // Await each listener sequentially
-                    await listener(evt).ConfigureAwait(false);
-                }
-                catch
-                {
-                    // Ignore listener exceptions to prevent one bad listener
-                    // from breaking the entire notification chain
-                }
-            }
+            
+            // Execute all listeners in parallel with individual timeout protection
+            var listenerTasks = listenersSnapshot.Select(listener => 
+                ExecuteListenerWithTimeoutAsync(listener, evt));
+            
+            await Task.WhenAll(listenerTasks).ConfigureAwait(false);
         }
 
         return true;
+    }
+
+    /// <summary>
+    ///     Execute a single listener with timeout protection
+    /// </summary>
+    private async Task ExecuteListenerWithTimeoutAsync(
+        Func<ConfigChangedEvent, Task> listener, 
+        ConfigChangedEvent evt)
+    {
+        try
+        {
+            using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(_listenerTimeoutMs));
+            var listenerTask = listener(evt);
+            var completedTask = await Task.WhenAny(listenerTask, Task.Delay(-1, cts.Token)).ConfigureAwait(false);
+            
+            if (completedTask != listenerTask)
+            {
+                // Listener timed out - log warning but don't throw
+                // Note: The listener task continues running in the background
+                System.Diagnostics.Debug.WriteLine(
+                    $"[NacosConfigSdk] Listener for {Key.DataId}/{Key.Group} timed out after {_listenerTimeoutMs}ms");
+            }
+            else
+            {
+                // Await to propagate any exceptions (which we'll catch below)
+                await listenerTask.ConfigureAwait(false);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Timeout cancellation - already logged above
+        }
+        catch (Exception ex)
+        {
+            // Log listener exception but don't propagate to prevent
+            // one bad listener from affecting others
+            System.Diagnostics.Debug.WriteLine(
+                $"[NacosConfigSdk] Listener for {Key.DataId}/{Key.Group} threw exception: {ex.Message}");
+        }
     }
 
     /// <summary>

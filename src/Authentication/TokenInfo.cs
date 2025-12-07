@@ -7,6 +7,7 @@ internal class TokenInfo
 {
     private string? _accessToken;
     private long _tokenTtl;
+    private long _lastRefreshTimeTicks;
 
     public string? AccessToken
     {
@@ -20,7 +21,11 @@ internal class TokenInfo
         set => Interlocked.Exchange(ref _tokenTtl, value);
     }
 
-    public DateTimeOffset LastRefreshTime { get; set; }
+    public DateTimeOffset LastRefreshTime
+    {
+        get => new DateTimeOffset(Interlocked.Read(ref _lastRefreshTimeTicks), TimeSpan.Zero);
+        set => Interlocked.Exchange(ref _lastRefreshTimeTicks, value.UtcTicks);
+    }
 
     public long TokenRefreshWindow => TokenTtl / 10;
 

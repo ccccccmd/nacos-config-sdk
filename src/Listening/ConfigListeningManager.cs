@@ -41,7 +41,7 @@ public class ConfigListeningManager : IConfigListeningManager
 
     public void AddListener(ConfigKey key, Action<ConfigChangedEvent> callback)
     {
-        var entry = _configCache.GetOrAdd(key, k => new ConfigCacheEntry(k, string.Empty, string.Empty));
+        var entry = _configCache.GetOrAdd(key, k => new ConfigCacheEntry(k, string.Empty, string.Empty, _options.LongPollingTimeoutMs));
         entry.AddListenerAsync(callback).GetAwaiter().GetResult();
 
         _logger.LogInformation("Added listener for {DataId}/{Group}, total listeners: {Count}",
@@ -50,7 +50,7 @@ public class ConfigListeningManager : IConfigListeningManager
 
     public void AddAsyncListener(ConfigKey key, Func<ConfigChangedEvent, Task> asyncCallback)
     {
-        var entry = _configCache.GetOrAdd(key, k => new ConfigCacheEntry(k, string.Empty, string.Empty));
+        var entry = _configCache.GetOrAdd(key, k => new ConfigCacheEntry(k, string.Empty, string.Empty, _options.LongPollingTimeoutMs));
         entry.AddAsyncListenerAsync(asyncCallback).GetAwaiter().GetResult();
 
         _logger.LogInformation("Added async listener for {DataId}/{Group}, total listeners: {Count}",

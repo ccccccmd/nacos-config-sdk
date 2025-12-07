@@ -21,7 +21,7 @@ public class NacosConfigService : INacosConfigService, IDisposable
     private readonly ILogger<NacosConfigService> _logger;
     private readonly NacosConfigOptions _options;
     private readonly SemaphoreSlim _startLock = new(1, 1);
-    private bool _started;
+    private volatile bool _started;
 
     public NacosConfigService(
         INacosConfigClient client,

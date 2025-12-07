@@ -201,11 +201,38 @@ public class UsernamePasswordAuthProvider : IAuthenticationProvider, IDisposable
         }
     }
 
+    /// <summary>
+    ///     Calculate the refresh interval based on token TTL.
+    ///     Uses 80% of TTL, with a minimum of 30 seconds and maximum of 5 minutes.
+    /// </summary>
+    private TimeSpan CalculateRefreshInterval()
+    {
+        const int MinRefreshSeconds = 30;
+        const int MaxRefreshSeconds = 300; // 5 minutes
+        
+        if (_tokenInfo.TokenTtl <= 0)
+        {
+            return TimeSpan.FromSeconds(MinRefreshSeconds);
+        }
+        
+        // Refresh at 80% of token lifetime
+        var refreshSeconds = (long)(_tokenInfo.TokenTtl * 0.8);
+        
+        // Clamp between min and max
+        refreshSeconds = Math.Max(MinRefreshSeconds, Math.Min(MaxRefreshSeconds, refreshSeconds));
+        
+        return TimeSpan.FromSeconds(refreshSeconds);
+    }
+
     private void StartTokenRefreshTimer()
     {
+        var refreshInterval = CalculateRefreshInterval();
+        _logger.LogInformation("Starting token refresh timer with interval: {Interval}s (TTL: {Ttl}s)", 
+            refreshInterval.TotalSeconds, _tokenInfo.TokenTtl);
+
 #if NET6_0_OR_GREATER
         _refreshCts = new CancellationTokenSource();
-        _refreshTimer = new PeriodicTimer(TimeSpan.FromSeconds(5));
+        _refreshTimer = new PeriodicTimer(refreshInterval);
 
         _ = Task.Run(async () =>
         {
@@ -214,6 +241,13 @@ public class UsernamePasswordAuthProvider : IAuthenticationProvider, IDisposable
                 try
                 {
                     await EnsureAuthenticatedAsync(_refreshCts.Token).ConfigureAwait(false);
+                    
+                    // Note: PeriodicTimer interval cannot be changed after creation,
+                    // but EnsureAuthenticatedAsync will handle token refresh when needed
+                }
+                catch (OperationCanceledException) when (_refreshCts.Token.IsCancellationRequested)
+                {
+                    break;
                 }
                 catch (Exception ex)
                 {
@@ -235,8 +269,8 @@ public class UsernamePasswordAuthProvider : IAuthenticationProvider, IDisposable
                 }
             },
             null,
-            TimeSpan.FromSeconds(5),
-            TimeSpan.FromSeconds(5));
+            refreshInterval,
+            refreshInterval);
 #endif
 
         _logger.LogDebug("Started token refresh timer");
