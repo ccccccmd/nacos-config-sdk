@@ -10,14 +10,30 @@
         <NoWarn>$(NoWarn);1591;CS0169</NoWarn>
 
         <!-- Package metadata -->
-        <PackageId>NacosConfigSdk</PackageId>
-        <Version>2.0.0-alpha</Version>
-        <Authors>nacos-sdk-csharp Contributors</Authors>
-        <Description>Nacos Configuration Center SDK - Simplified HTTP-only implementation with modern async patterns</Description>
-        <PackageTags>nacos,config,configuration,http</PackageTags>
+        <PackageId>Nacos.Config.Lite</PackageId>
+        <Version>1.0.0-rc.1</Version>
+        <Authors>ccccccmd</Authors>
+        <Description>A production-ready, lightweight Nacos configuration SDK for .NET. HTTP-only design with zero gRPC dependencies, built on modern async/await patterns and IHttpClientFactory for optimal connection pooling. Features dual authentication (username/password and AK/SK), automatic failover, local snapshot caching, and real-time config change notifications. Perfect for microservices and cloud-native applications.</Description>
+        <PackageTags>nacos;nacos-client;configuration;config-center;alibaba;microservices;cloud-native;distributed-config;service-mesh;dotnet;netcore;async;http-client;failover;snapshot;long-polling;spring-cloud-alibaba</PackageTags>
         <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
         <RepositoryUrl>https://github.com/ccccccmd/nacos-config-sdk</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <PackageProjectUrl>https://github.com/ccccccmd/nacos-config-sdk</PackageProjectUrl>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <PackageIcon>icon.png</PackageIcon>
+        <PackageReleaseNotes>v1.0.0-rc.1: Release candidate with complete core features - config CRUD, dual authentication, long-polling listener, local snapshots, and production-ready quality</PackageReleaseNotes>
+        
+        <!-- Build settings -->
+        <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+        <IncludeSymbols>true</IncludeSymbols>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     </PropertyGroup>
+    
+    <!-- Include README in package -->
+    <ItemGroup>
+        <None Include="..\README.md" Pack="true" PackagePath="\" />
+        <None Include="icon.png" Pack="true" PackagePath="\" />
+    </ItemGroup>
 
     <!-- Common dependencies for all frameworks -->
     <ItemGroup>

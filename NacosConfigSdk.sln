@@ -12,10 +12,16 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NacosConfigSample", "samples\NacosConfigSample\NacosConfigSample.csproj", "{34C9009A-580D-463C-852F-77BAC337C290}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{0AB3BF05-4346-4AA6-1389-037BE0695223}"
+	ProjectSection(SolutionItems) = preProject
+		tests\README.md = tests\README.md
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NacosConfigTests", "tests\NacosConfigTests\NacosConfigTests.csproj", "{399472E8-9068-4150-9CA9-F5C0F7087BA6}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "benchmarks", "benchmarks", "{66320409-64EC-F7C5-3DEF-65E7510DAAD1}"
+	ProjectSection(SolutionItems) = preProject
+		benchmarks\README.md = benchmarks\README.md
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NacosBenchmarks", "benchmarks\NacosBenchmarks\NacosBenchmarks.csproj", "{08BAB30E-7FBD-445F-AF66-BA43531359D0}"
 EndProject
