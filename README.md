@@ -142,6 +142,25 @@ public class YourService
         // Unsubscribe
         // subscription.Dispose();
     }
+
+    // Listen with async callback (for async operations)
+    public void ListenWithAsyncCallback()
+    {
+        var subscription = _configService.Subscribe(
+            dataId: "app-config.json",
+            group: "DEFAULT_GROUP",
+            asyncCallback: async evt =>
+            {
+                // Perform async operations
+                await SaveToDatabase(evt.NewContent);
+                await NotifyExternalService(evt.NewContent);
+                Console.WriteLine($"Async processing complete: {evt.NewContent}");
+            }
+        );
+
+        // Unsubscribe
+        // subscription.Dispose();
+    }
 }
 ```
 

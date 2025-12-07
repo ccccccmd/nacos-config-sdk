@@ -194,6 +194,37 @@ public class NacosConfigService : INacosConfigService, IDisposable
         });
     }
 
+    public IDisposable Subscribe(
+        string dataId,
+        string group,
+        Func<ConfigChangedEvent, Task> asyncCallback)
+    {
+        group = ConfigValidator.NormalizeGroup(group);
+        ConfigValidator.ValidateKey(dataId, group);
+
+        if (asyncCallback == null)
+        {
+            throw new ArgumentNullException(nameof(asyncCallback));
+        }
+
+        var key = new ConfigKey(dataId, group, _options.Namespace);
+
+        // Ensure listening manager is started
+        EnsureListeningManagerStartedAsync().GetAwaiter().GetResult();
+
+        // Add async listener
+        _listeningManager.AddAsyncListener(key, asyncCallback);
+
+        _logger.LogInformation("Subscribed to {DataId}/{Group} with async callback", dataId, group);
+
+        // Return unsubscribe action
+        return new DisposableAction(() =>
+        {
+            _listeningManager.RemoveAsyncListener(key, asyncCallback);
+            _logger.LogInformation("Unsubscribed from {DataId}/{Group}", dataId, group);
+        });
+    }
+
     private async Task EnsureListeningManagerStartedAsync()
     {
         if (_started)

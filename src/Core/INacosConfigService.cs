@@ -42,4 +42,13 @@ public interface INacosConfigService
         string dataId,
         string group,
         Action<ConfigChangedEvent> callback);
+
+    /// <summary>
+    ///     Subscribe to configuration changes with async callback
+    ///     Returns IDisposable to unsubscribe
+    /// </summary>
+    IDisposable Subscribe(
+        string dataId,
+        string group,
+        Func<ConfigChangedEvent, Task> asyncCallback);
 }

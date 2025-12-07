@@ -142,6 +142,25 @@ public class YourService
         // 取消订阅
         // subscription.Dispose();
     }
+
+    // 使用异步回调监听(支持异步操作)
+    public void ListenWithAsyncCallback()
+    {
+        var subscription = _configService.Subscribe(
+            dataId: "app-config.json",
+            group: "DEFAULT_GROUP",
+            asyncCallback: async evt =>
+            {
+                // 执行异步操作
+                await SaveToDatabase(evt.NewContent);
+                await NotifyExternalService(evt.NewContent);
+                Console.WriteLine($"异步处理完成: {evt.NewContent}");
+            }
+        );
+
+        // 取消订阅
+        // subscription.Dispose();
+    }
 }
 ```
 

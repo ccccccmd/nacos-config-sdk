@@ -7,7 +7,13 @@ namespace Nacos.Config.Listening;
 /// </summary>
 internal class ConfigCacheEntry
 {
-    private readonly List<Action<ConfigChangedEvent>> _listeners = new();
+    // Unified async listener list - sync callbacks are wrapped as async
+    private readonly List<Func<ConfigChangedEvent, Task>> _asyncListeners = new();
+    
+    // Map to track sync callbacks and their async wrappers for proper removal
+    // This prevents memory leaks when disposing subscriptions
+    private readonly Dictionary<Action<ConfigChangedEvent>, Func<ConfigChangedEvent, Task>> _syncToAsyncMap = new();
+    
     private readonly SemaphoreSlim _lock = new(1, 1);
 
     public ConfigCacheEntry(ConfigKey key, string content, string md5)
@@ -22,16 +28,47 @@ internal class ConfigCacheEntry
     public string Md5 { get; private set; }
 
     /// <summary>
-    ///     Add a listener
+    ///     Add a synchronous listener (wrapped as async)
     /// </summary>
     public async Task AddListenerAsync(Action<ConfigChangedEvent> callback)
     {
         await _lock.WaitAsync().ConfigureAwait(false);
         try
         {
-            if (!_listeners.Contains(callback))
+            // Prevent duplicate additions (memory leak protection)
+            if (_syncToAsyncMap.ContainsKey(callback))
             {
-                _listeners.Add(callback);
+                return;
+            }
+
+            // Wrap sync callback as async
+            var asyncCallback = new Func<ConfigChangedEvent, Task>(evt =>
+            {
+                callback(evt);
+                return Task.CompletedTask;
+            });
+
+            // Store mapping for later removal
+            _syncToAsyncMap[callback] = asyncCallback;
+            _asyncListeners.Add(asyncCallback);
+        }
+        finally
+        {
+            _lock.Release();
+        }
+    }
+
+    /// <summary>
+    ///     Add an asynchronous listener
+    /// </summary>
+    public async Task AddAsyncListenerAsync(Func<ConfigChangedEvent, Task> asyncCallback)
+    {
+        await _lock.WaitAsync().ConfigureAwait(false);
+        try
+        {
+            if (!_asyncListeners.Contains(asyncCallback))
+            {
+                _asyncListeners.Add(asyncCallback);
             }
         }
         finally
@@ -41,14 +78,38 @@ internal class ConfigCacheEntry
     }
 
     /// <summary>
-    ///     Remove a listener
+    ///     Remove a synchronous listener
     /// </summary>
     public async Task<bool> RemoveListenerAsync(Action<ConfigChangedEvent> callback)
     {
         await _lock.WaitAsync().ConfigureAwait(false);
         try
         {
-            return _listeners.Remove(callback);
+            // Find the wrapped async callback using the mapping dictionary
+            if (_syncToAsyncMap.TryGetValue(callback, out var asyncCallback))
+            {
+                // Remove from both collections
+                _asyncListeners.Remove(asyncCallback);
+                _syncToAsyncMap.Remove(callback);
+                return true;
+            }
+            return false;
+        }
+        finally
+        {
+            _lock.Release();
+        }
+    }
+
+    /// <summary>
+    ///     Remove an asynchronous listener
+    /// </summary>
+    public async Task<bool> RemoveAsyncListenerAsync(Func<ConfigChangedEvent, Task> asyncCallback)
+    {
+        await _lock.WaitAsync().ConfigureAwait(false);
+        try
+        {
+            return _asyncListeners.Remove(asyncCallback);
         }
         finally
         {
@@ -66,7 +127,7 @@ internal class ConfigCacheEntry
             return false; // No change
         }
 
-        Action<ConfigChangedEvent>[] listenersSnapshot;
+        Func<ConfigChangedEvent, Task>[] listenersSnapshot;
         string oldContent;
 
         await _lock.WaitAsync().ConfigureAwait(false);
@@ -77,14 +138,14 @@ internal class ConfigCacheEntry
             Md5 = newMd5;
 
             // Take snapshot of listeners to avoid holding lock during callbacks
-            listenersSnapshot = _listeners.ToArray();
+            listenersSnapshot = _asyncListeners.ToArray();
         }
         finally
         {
             _lock.Release();
         }
 
-        // Trigger listeners outside of lock
+        // Trigger all listeners outside of lock
         if (listenersSnapshot.Length > 0)
         {
             var evt = new ConfigChangedEvent(Key, newContent, oldContent, "text");
@@ -93,11 +154,13 @@ internal class ConfigCacheEntry
             {
                 try
                 {
-                    listener(evt);
+                    // Await each listener sequentially
+                    await listener(evt).ConfigureAwait(false);
                 }
                 catch
                 {
-                    // Ignore listener exceptions
+                    // Ignore listener exceptions to prevent one bad listener
+                    // from breaking the entire notification chain
                 }
             }
         }
@@ -110,7 +173,7 @@ internal class ConfigCacheEntry
     /// </summary>
     public bool HasListeners()
     {
-        return _listeners.Count > 0;
+        return _asyncListeners.Count > 0;
     }
 
     /// <summary>
@@ -118,6 +181,6 @@ internal class ConfigCacheEntry
     /// </summary>
     public int GetListenerCount()
     {
-        return _listeners.Count;
+        return _asyncListeners.Count;
     }
 }

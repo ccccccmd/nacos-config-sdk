@@ -48,6 +48,15 @@ public class ConfigListeningManager : IConfigListeningManager
             key.DataId, key.Group, entry.GetListenerCount());
     }
 
+    public void AddAsyncListener(ConfigKey key, Func<ConfigChangedEvent, Task> asyncCallback)
+    {
+        var entry = _configCache.GetOrAdd(key, k => new ConfigCacheEntry(k, string.Empty, string.Empty));
+        entry.AddAsyncListenerAsync(asyncCallback).GetAwaiter().GetResult();
+
+        _logger.LogInformation("Added async listener for {DataId}/{Group}, total listeners: {Count}",
+            key.DataId, key.Group, entry.GetListenerCount());
+    }
+
     public void RemoveListener(ConfigKey key, Action<ConfigChangedEvent> callback)
     {
         if (_configCache.TryGetValue(key, out var entry))
@@ -57,6 +66,28 @@ public class ConfigListeningManager : IConfigListeningManager
             if (removed)
             {
                 _logger.LogInformation("Removed listener for {DataId}/{Group}, remaining: {Count}",
+                    key.DataId, key.Group, entry.GetListenerCount());
+
+                // Remove entry if no more listeners
+                if (!entry.HasListeners())
+                {
+                    _configCache.TryRemove(key, out _);
+                    _logger.LogDebug("Removed cache entry for {DataId}/{Group} (no listeners)",
+                        key.DataId, key.Group);
+                }
+            }
+        }
+    }
+
+    public void RemoveAsyncListener(ConfigKey key, Func<ConfigChangedEvent, Task> asyncCallback)
+    {
+        if (_configCache.TryGetValue(key, out var entry))
+        {
+            var removed = entry.RemoveAsyncListenerAsync(asyncCallback).GetAwaiter().GetResult();
+
+            if (removed)
+            {
+                _logger.LogInformation("Removed async listener for {DataId}/{Group}, remaining: {Count}",
                     key.DataId, key.Group, entry.GetListenerCount());
 
                 // Remove entry if no more listeners
