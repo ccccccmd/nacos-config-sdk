@@ -150,7 +150,16 @@ public class ConfigListeningManager : IConfigListeningManager
     public void Dispose()
     {
         StopAsync().GetAwaiter().GetResult();
-        _changedConfigChannel.Writer.Complete();
+        
+        // Safely complete the channel - may already be completed
+        try
+        {
+            _changedConfigChannel.Writer.TryComplete();
+        }
+        catch (ChannelClosedException)
+        {
+            // Channel already closed, ignore
+        }
     }
 
     /// <summary>
