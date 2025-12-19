@@ -13,6 +13,7 @@ builder.Logging.AddConsole();
 builder.Logging.SetMinimumLevel(LogLevel.Debug);
 
 // Add Nacos configuration service
+// builder.Services.AddNacosConfigService(options => { configuration.GetSection("Nacos").Bind(options); });
 builder.Services.AddNacosConfigService(options =>
 {
     // Nacos server address

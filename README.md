@@ -14,7 +14,7 @@ A production-ready, lightweight Nacos configuration SDK for .NET. Redesigned wit
 
 | Feature | Description |
 |---------|-------------|
-| 🚀 **Production Ready** | RC version with complete core features, validated through benchmarks and integration tests |
+| 🚀 **Production Ready** | Stable v1.0.0 release with complete core features, production-validated through real-world deployments |
 | 🌐 **HTTP-Only** | Zero gRPC dependencies, simplified deployment and debugging |
 | ⚡ **High Performance** | Based on IHttpClientFactory, 100 concurrent requests in 77ms, 1MB memory footprint |
 | 🔐 **Dual Authentication** | Supports both Username/Password and AK/SK authentication |
@@ -245,7 +245,7 @@ Real-world test results on Aliyun ECS (1c2g, Nacos v2.3.2.0):
 
 ## Feature Status
 
-### ✅ v1.0.0-rc.1 Completed
+### ✅ v1.0.0 Completed
 
 **Core Features:**
 - ✅ HTTP-only client (zero gRPC dependencies)
